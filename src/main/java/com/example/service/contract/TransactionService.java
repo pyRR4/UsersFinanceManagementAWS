@@ -4,9 +4,13 @@ import com.example.model.Transaction;
 import com.example.model.TransactionRequest;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface TransactionService {
     void createTransaction(TransactionRequest transaction, int userId);
     List<Transaction> getTransactionsForUser(int userId);
     List<Transaction> getTransactionsForUserByCategory(int userId, int categoryId);
+    Optional<Transaction> getTransactionById(int transactionId, int userId);
+    void deleteByIdAndUserId(int transactionId, int userId);
+    void updateTransaction(int transactionId, int userId, TransactionRequest transactionDetails);
 }

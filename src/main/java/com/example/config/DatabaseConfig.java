@@ -1,8 +1,6 @@
 package com.example.config;
 
 import lombok.Getter;
-import software.amazon.awssdk.services.rdsdata.model.ExecuteStatementRequest;
-import software.amazon.awssdk.services.rdsdata.model.SqlParameter;
 
 import java.util.Objects;
 import java.util.stream.Stream;

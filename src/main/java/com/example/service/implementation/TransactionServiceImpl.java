@@ -1,5 +1,6 @@
 package com.example.service.implementation;
 
+import com.example.exception.ResourceNotFoundException;
 import com.example.model.Transaction;
 import com.example.model.TransactionRequest;
 import com.example.repository.contract.TransactionRepository;
@@ -7,6 +8,7 @@ import com.example.service.contract.TransactionService;
 import lombok.RequiredArgsConstructor;
 
 import java.util.List;
+import java.util.Optional;
 
 @RequiredArgsConstructor
 public class TransactionServiceImpl implements TransactionService {
@@ -26,5 +28,28 @@ public class TransactionServiceImpl implements TransactionService {
     @Override
     public List<Transaction> getTransactionsForUserByCategory(int userId, int categoryId) {
         return transactionRepository.findAllByUserIdAndCategoryId(userId, categoryId);
+    }
+
+    @Override
+    public Optional<Transaction> getTransactionById(int transactionId, int userId) {
+        return transactionRepository.findByIdAndUserId(transactionId, userId);
+    }
+
+    @Override
+    public void deleteByIdAndUserId(int transactionId, int userId) {
+        transactionRepository.findByIdAndUserId(transactionId, userId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Transaction not found with id: " + transactionId + " and userId: " + userId));
+
+        transactionRepository.deleteByIdAndUserId(transactionId, userId);
+    }
+
+    @Override
+    public void updateTransaction(int transactionId, int userId, TransactionRequest transactionDetails) {
+        transactionRepository.findByIdAndUserId(transactionId, userId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Transaction not found with id: " + transactionId + " and userId: " + userId));
+
+        transactionRepository.update(transactionId, userId, transactionDetails);
     }
 }
