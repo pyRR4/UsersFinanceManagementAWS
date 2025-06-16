@@ -6,21 +6,21 @@ import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
 import com.example.factory.DependencyFactory;
 import com.example.model.ResponseMessage;
-import com.example.model.TransactionRequest;
+import com.example.model.Transaction;
 import com.example.service.contract.AuthService;
 import com.example.service.contract.TransactionService;
 import com.google.gson.Gson;
 
+import java.util.List;
 import java.util.Map;
 
-public class CreateTransactionHandler
-        implements RequestHandler<APIGatewayProxyRequestEvent, APIGatewayProxyResponseEvent> {
+public class GetTransactionsHandler implements RequestHandler<APIGatewayProxyRequestEvent, APIGatewayProxyResponseEvent> {
 
-    private final Gson gson;
     private final AuthService authService;
     private final TransactionService transactionService;
+    private final Gson gson;
 
-    public CreateTransactionHandler() {
+    public GetTransactionsHandler() {
         DependencyFactory factory = DependencyFactory.getInstance();
         this.authService = factory.getAuthService();
         this.transactionService = factory.getTransactionService();
@@ -28,21 +28,32 @@ public class CreateTransactionHandler
     }
 
     @Override
-    public APIGatewayProxyResponseEvent handleRequest(
-            APIGatewayProxyRequestEvent request,
-            Context context
-    ) {
+    public APIGatewayProxyResponseEvent handleRequest(APIGatewayProxyRequestEvent request, Context context) {
         APIGatewayProxyResponseEvent response = new APIGatewayProxyResponseEvent();
         response.setHeaders(Map.of("Content-Type", "application/json", "Access-Control-Allow-Origin", "*"));
 
         try {
             int userId = authService.getUserId(request);
 
-            TransactionRequest transactionRequest = gson.fromJson(request.getBody(), TransactionRequest.class);
-            transactionService.createTransaction(transactionRequest, userId);
+            List<Transaction> transactions;
+            Map<String, String> queryParams = request.getQueryStringParameters();
 
-            response.setStatusCode(201);
-            response.setBody(gson.toJson(new ResponseMessage("Transaction created successfully")));
+            if (queryParams != null && queryParams.containsKey("categoryId")) {
+                context.getLogger().log("Fetching transactions by category for user " + userId);
+                int categoryId = Integer.parseInt(queryParams.get("categoryId"));
+                transactions = transactionService.getTransactionsForUserByCategory(userId, categoryId);
+            } else {
+                context.getLogger().log("Fetching all transactions for user " + userId);
+                transactions = transactionService.getTransactionsForUser(userId);
+            }
+
+            response.setStatusCode(200);
+            response.setBody(gson.toJson(transactions));
+
+        } catch (NumberFormatException e) {
+            context.getLogger().log("ERROR: Invalid categoryId format - " + e.getMessage());
+            response.setStatusCode(400);
+            response.setBody(gson.toJson(new ResponseMessage("Invalid categoryId format. It must be a number.")));
         } catch (Exception e) {
             context.getLogger().log("ERROR: " + e.toString());
             response.setStatusCode(500);

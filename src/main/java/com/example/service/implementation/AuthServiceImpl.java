@@ -3,6 +3,7 @@ package com.example.service.implementation;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.example.repository.contract.UserRepository;
 import com.example.service.contract.AuthService;
+import com.example.model.User;
 import lombok.RequiredArgsConstructor;
 
 import java.util.Map;
@@ -27,7 +28,8 @@ public class AuthServiceImpl implements AuthService {
             throw new RuntimeException("Cognito 'sub' or 'email' claim not found in token.");
         }
 
-        return userRepository.findUserIdByCognitoSub(cognitoSub)
-                .orElseGet(() -> userRepository.createUser(cognitoSub, email));
+        return userRepository.findByCognitoSub(cognitoSub)
+                .map(User::getId)
+                .orElseGet(() -> userRepository.create(cognitoSub, email).getId());
     }
 }
