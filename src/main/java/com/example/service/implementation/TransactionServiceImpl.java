@@ -2,7 +2,7 @@ package com.example.service.implementation;
 
 import com.example.exception.ResourceNotFoundException;
 import com.example.model.Transaction;
-import com.example.model.TransactionRequest;
+import com.example.model.request.TransactionRequest;
 import com.example.repository.contract.TransactionRepository;
 import com.example.service.contract.TransactionService;
 import lombok.RequiredArgsConstructor;

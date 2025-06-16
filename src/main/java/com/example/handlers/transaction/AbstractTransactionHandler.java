@@ -6,7 +6,7 @@ import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
 import com.example.exception.ResourceNotFoundException;
 import com.example.factory.DependencyFactory;
-import com.example.model.ResponseMessage;
+import com.example.model.response.ResponseMessage;
 import com.example.service.contract.AuthService;
 import com.example.service.contract.TransactionService;
 import com.google.gson.Gson;

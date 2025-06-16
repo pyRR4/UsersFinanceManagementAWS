@@ -2,7 +2,7 @@ package com.example.repository.implementation;
 
 import com.example.config.DatabaseConfig;
 import com.example.model.Transaction;
-import com.example.model.TransactionRequest;
+import com.example.model.request.TransactionRequest;
 import com.example.repository.AbstractRdsRepository;
 import com.example.repository.contract.TransactionRepository;
 import software.amazon.awssdk.services.rdsdata.RdsDataClient;

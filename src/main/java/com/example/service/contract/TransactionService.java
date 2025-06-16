@@ -1,7 +1,7 @@
 package com.example.service.contract;
 
 import com.example.model.Transaction;
-import com.example.model.TransactionRequest;
+import com.example.model.request.TransactionRequest;
 
 import java.util.List;
 import java.util.Optional;

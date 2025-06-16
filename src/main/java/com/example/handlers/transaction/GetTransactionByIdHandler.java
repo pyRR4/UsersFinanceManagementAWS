@@ -2,7 +2,7 @@ package com.example.handlers.transaction;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
-import com.example.model.ResponseMessage;
+import com.example.model.response.ResponseMessage;
 import com.example.model.Transaction;
 
 import java.util.Optional;
