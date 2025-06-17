@@ -1,4 +1,4 @@
-package com.example.handlers.transaction;
+package com.example.handlers;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
@@ -8,25 +8,23 @@ import com.example.exception.ResourceNotFoundException;
 import com.example.factory.DependencyFactory;
 import com.example.model.response.ResponseMessage;
 import com.example.service.contract.AuthService;
-import com.example.service.contract.TransactionService;
 import com.google.gson.Gson;
 
 import java.util.Map;
 
-public abstract class AbstractTransactionHandler
-        implements RequestHandler<APIGatewayProxyRequestEvent, APIGatewayProxyResponseEvent> {
+public abstract class AbstractHandler<T> implements RequestHandler<APIGatewayProxyRequestEvent, APIGatewayProxyResponseEvent> {
 
     protected final AuthService authService;
-    protected final TransactionService transactionService;
     protected final Gson gson;
+    protected final T service;
 
-    protected record HandlerResponse(int statusCode, String body) {}
+    public record HandlerResponse(int statusCode, String body) {}
 
-    public AbstractTransactionHandler() {
+    public AbstractHandler(Class<T> serviceClass) {
         DependencyFactory factory = DependencyFactory.getInstance();
-        this.authService = factory.getAuthService();
-        this.transactionService = factory.getTransactionService();
-        this.gson = factory.getGson();
+        this.service = factory.getService(serviceClass);
+        this.authService = factory.getService(AuthService.class);
+        this.gson = factory.getService(Gson.class);
     }
 
     @Override
