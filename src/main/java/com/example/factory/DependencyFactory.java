@@ -1,17 +1,9 @@
 package com.example.factory;
 
-import com.example.repository.contract.CategoryRepository;
-import com.example.repository.contract.TransactionRepository;
-import com.example.repository.contract.UserRepository;
-import com.example.repository.implementation.CategoryRepositoryImpl;
-import com.example.repository.implementation.TransactionRepositoryImpl;
-import com.example.repository.implementation.UserRepositoryImpl;
-import com.example.service.contract.AuthService;
-import com.example.service.contract.CategoryService;
-import com.example.service.contract.TransactionService;
-import com.example.service.implementation.AuthServiceImpl;
-import com.example.service.implementation.CategoryServiceImpl;
-import com.example.service.implementation.TransactionServiceImpl;
+import com.example.repository.contract.*;
+import com.example.repository.implementation.*;
+import com.example.service.contract.*;
+import com.example.service.implementation.*;
 import com.google.gson.Gson;
 import com.example.config.DatabaseConfig;
 import lombok.Getter;
@@ -31,6 +23,9 @@ public class DependencyFactory {
         DatabaseConfig dbConfig = new DatabaseConfig();
         RdsDataClient rdsDataClient = RdsDataClient.builder().build();
 
+        TransactionManager transactionManager = new RdsTransactionManager(rdsDataClient, dbConfig);
+        services.put(TransactionManager.class, transactionManager);
+
         UserRepository userRepository = new UserRepositoryImpl(rdsDataClient, dbConfig);
         AuthService authService = new AuthServiceImpl(userRepository);
         services.put(AuthService.class, authService);
@@ -42,6 +37,11 @@ public class DependencyFactory {
         CategoryRepository categoryRepository = new CategoryRepositoryImpl(rdsDataClient, dbConfig);
         CategoryService categoryService = new CategoryServiceImpl(categoryRepository);
         services.put(CategoryService.class, categoryService);
+
+        SavingGoalRepository savingGoalRepository = new SavingGoalRepositoryImpl(rdsDataClient, dbConfig);
+        SavingGoalService savingGoalService = new SavingGoalServiceImpl(
+                savingGoalRepository, userRepository, transactionRepository, transactionManager);
+        services.put(SavingGoalService.class, savingGoalService);
 
         services.put(Gson.class, new Gson());
     }

@@ -11,7 +11,6 @@ import software.amazon.awssdk.services.rdsdata.model.ExecuteStatementResponse;
 import software.amazon.awssdk.services.rdsdata.model.Field;
 import software.amazon.awssdk.services.rdsdata.model.SqlParameter;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -23,23 +22,21 @@ public class TransactionRepositoryImpl extends AbstractRdsRepository<Transaction
 
     @Override
     public void save(TransactionRequest transaction, int userId) {
+        this.save(transaction, userId, null);
+    }
+
+    @Override
+    public void save(TransactionRequest transaction, int userId, String transactionId) {
         String sql = "INSERT INTO transactions (user_id, amount, date, description, category_id) " +
                 "VALUES (:user_id, :amount, :date, :description, :category_id)";
 
-        List<SqlParameter> parameters = new ArrayList<>();
-        parameters.add(userIdParam(userId));
-        parameters.add(amountParam(transaction.getAmount()));
-        parameters.add(dateParam(transaction.getDate()));
-        parameters.add(descParam(transaction.getDescription()));
-        parameters.add(categoryIdParam(transaction.getCategoryId()));
+        SqlParameter userParam = userIdParam(userId);
+        SqlParameter amountParam = amountParam(transaction.getAmount());
+        SqlParameter dateParam = dateParam(transaction.getDate());
+        SqlParameter descParam = descParam(transaction.getDescription());
+        SqlParameter categoryParam = categoryIdParam(transaction.getCategoryId());
 
-        ExecuteStatementRequest request = ExecuteStatementRequest.builder()
-                .resourceArn(databaseConfig.getDbClusterArn())
-                .secretArn(databaseConfig.getDbSecretArn())
-                .database(databaseConfig.getDbName())
-                .sql(sql)
-                .parameters(parameters)
-                .build();
+        ExecuteStatementRequest request = createExecuteStatementRequest(sql, transactionId, userParam, amountParam, dateParam, descParam, categoryParam);
 
         rdsDataClient.executeStatement(request);
     }
@@ -110,6 +107,7 @@ public class TransactionRepositoryImpl extends AbstractRdsRepository<Transaction
 
         ExecuteStatementRequest request = createExecuteStatementRequest(sql, amountParam,
                 categoryParam, descriptionParam, dateParam, idParam, userParam);
+        rdsDataClient.executeStatement(request);
     }
 
     @Override

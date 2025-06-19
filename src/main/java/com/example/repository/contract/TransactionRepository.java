@@ -8,6 +8,7 @@ import java.util.Optional;
 
 public interface TransactionRepository {
     void save(TransactionRequest transaction, int userId);
+    void save(TransactionRequest transaction, int userId, String transactionId);
 
     List<Transaction> findAllByUserId(int userId);
     List<Transaction> findAllByUserIdAndCategoryId(int userId, int categoryId);

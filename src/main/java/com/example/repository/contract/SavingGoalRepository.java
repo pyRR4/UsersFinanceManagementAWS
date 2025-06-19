@@ -12,5 +12,7 @@ public interface SavingGoalRepository {
     Optional<SavingGoal> findByIdAndUserId(int goalId, int userId);
     SavingGoal update(int goalId, int userId, SavingGoalRequest request);
     void deleteByIdAndUserId(int goalId, int userId);
+    void deleteByIdAndUserId(int goalId, int userId, String transactionId);
     double addFunds(int goalId, int userId, double amountToAdd);
+    double addFunds(int goalId, int userId, double amountToAdd, String transactionId);
 }

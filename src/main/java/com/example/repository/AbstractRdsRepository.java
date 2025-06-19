@@ -18,13 +18,22 @@ public abstract class AbstractRdsRepository<T> {
     protected final DatabaseConfig databaseConfig;
 
     protected ExecuteStatementRequest createExecuteStatementRequest(String sql, SqlParameter... parameters) {
-        return ExecuteStatementRequest.builder()
+        return createExecuteStatementRequest(sql, null, parameters);
+    }
+
+    protected ExecuteStatementRequest createExecuteStatementRequest(String sql, String transactionId, SqlParameter... parameters) {
+        ExecuteStatementRequest.Builder requestBuilder = ExecuteStatementRequest.builder()
                 .resourceArn(databaseConfig.getDbClusterArn())
                 .secretArn(databaseConfig.getDbSecretArn())
                 .database(databaseConfig.getDbName())
                 .sql(sql)
-                .parameters(parameters)
-                .build();
+                .parameters(parameters);
+
+        if (transactionId != null && !transactionId.isEmpty()) {
+            requestBuilder.transactionId(transactionId);
+        }
+
+        return requestBuilder.build();
     }
 
     protected List<T> mapResponseToList(ExecuteStatementResponse response) {

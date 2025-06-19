@@ -78,16 +78,26 @@ public class SavingGoalRepositoryImpl extends AbstractRdsRepository<SavingGoal> 
 
     @Override
     public void deleteByIdAndUserId(int goalId, int userId) {
+        deleteByIdAndUserId(goalId, userId, null);
+    }
+
+    @Override
+    public void deleteByIdAndUserId(int goalId, int userId, String transactionId) {
         String sql = "DELETE FROM saving_goals WHERE id = :goal_id AND user_id = :user_id";
         SqlParameter goalParam = goalParam(goalId);
         SqlParameter userParam = userParam(userId);
 
-        ExecuteStatementRequest sqlRequest = createExecuteStatementRequest(sql, goalParam, userParam);
+        ExecuteStatementRequest sqlRequest = createExecuteStatementRequest(sql, transactionId, goalParam, userParam);
         rdsDataClient.executeStatement(sqlRequest);
     }
 
     @Override
     public double addFunds(int goalId, int userId, double amountToAdd) {
+        return this.addFunds(goalId, userId, amountToAdd, null);
+    }
+
+    @Override
+    public double addFunds(int goalId, int userId, double amountToAdd, String transactionId) {
         String sql = "UPDATE saving_goals SET current_amount = current_amount + :amount_to_add " +
                 "WHERE id = :goal_id AND user_id = :user_id " +
                 "RETURNING current_amount";
@@ -96,7 +106,7 @@ public class SavingGoalRepositoryImpl extends AbstractRdsRepository<SavingGoal> 
         SqlParameter goalParam = goalParam(goalId);
         SqlParameter userParam = userParam(userId);
 
-        ExecuteStatementRequest sqlRequest = createExecuteStatementRequest(sql, amountParam, goalParam, userParam);
+        ExecuteStatementRequest sqlRequest = createExecuteStatementRequest(sql, transactionId, amountParam, goalParam, userParam);
         ExecuteStatementResponse response = rdsDataClient.executeStatement(sqlRequest);
 
         return response.records().get(0).get(0).doubleValue();
