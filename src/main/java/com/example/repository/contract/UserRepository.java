@@ -1,6 +1,8 @@
 package com.example.repository.contract;
 
 import com.example.model.User;
+
+import java.util.List;
 import java.util.Optional;
 
 public interface UserRepository {
@@ -8,4 +10,5 @@ public interface UserRepository {
     User create(String cognitoSub, String email);
     double updateBalance(int userId, double balanceDelta, String transactionId);
     double getBalance(int userId);
+    List<User> findAll();
 }

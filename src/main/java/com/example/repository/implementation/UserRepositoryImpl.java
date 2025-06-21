@@ -83,6 +83,16 @@ public class UserRepositoryImpl extends AbstractRdsRepository<User> implements U
     }
 
     @Override
+    public List<User> findAll() {
+        String sql = "SELECT id, cognito_sub, email, balance, created_at FROM users";
+
+        ExecuteStatementRequest request = createExecuteStatementRequest(sql);
+        ExecuteStatementResponse response = rdsDataClient.executeStatement(request);
+
+        return mapResponseToList(response);
+    }
+
+    @Override
     protected User mapToEntity(List<Field> record) {
         return new User(
                 record.get(0).longValue().intValue(),                                                           // id

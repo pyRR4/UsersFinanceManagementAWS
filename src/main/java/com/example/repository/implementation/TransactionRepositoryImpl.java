@@ -71,6 +71,22 @@ public class TransactionRepositoryImpl extends AbstractRdsRepository<Transaction
     }
 
     @Override
+    public List<Transaction> findAllByUserIdAndMonth(int userId, int year, int month) {
+        String sql = "SELECT id, amount, date, description, category_id FROM transactions" +
+                "WHERE user_id = :user_id AND EXTRACT(YEAR FROM date) = :year AND EXTRACT(MONTH FROM date) = :month" +
+                "ORDER BY date ASC";
+
+        SqlParameter userParam = userIdParam(userId);
+        SqlParameter yearParam = yearParam(year);
+        SqlParameter monthParam = monthParam(month);
+
+        ExecuteStatementRequest request = createExecuteStatementRequest(sql, userParam, yearParam, monthParam);
+        ExecuteStatementResponse response = rdsDataClient.executeStatement(request);
+
+        return mapResponseToList(response);
+    }
+
+    @Override
     public Optional<Transaction> findByIdAndUserId(int transactionId, int userId) {
         String sql = "SELECT id, amount, date, description, category_id FROM transactions WHERE id = :transaction_id AND user_id = :user_id";
         SqlParameter idParam = transactionIdParam(transactionId);
@@ -160,6 +176,20 @@ public class TransactionRepositoryImpl extends AbstractRdsRepository<Transaction
         return SqlParameter.builder()
                 .name("date")
                 .value(Field.builder().stringValue(date).build())
+                .build();
+    }
+
+    private SqlParameter yearParam(int year) {
+        return SqlParameter.builder()
+                .name("year")
+                .value(Field.builder().longValue((long) year).build())
+                .build();
+    }
+
+    private SqlParameter monthParam(int month) {
+        return SqlParameter.builder()
+                .name("month")
+                .value(Field.builder().longValue((long) month).build())
                 .build();
     }
 }
