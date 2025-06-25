@@ -20,7 +20,7 @@ public class SaveForecastHandler implements RequestHandler<ForecastRequest, Fore
         context.getLogger().log("Saving forecast for user: " + input.getUserId() +
                 " for date: " + input.getForecastForDate());
 
-        Forecast savedForecast = forecastService.save(input);
+        Forecast savedForecast = forecastService.saveForecast(input);
 
         context.getLogger().log("Forecast saved with ID: " + savedForecast.getId());
         return savedForecast;

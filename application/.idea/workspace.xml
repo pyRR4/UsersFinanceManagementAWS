@@ -4,26 +4,9 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="e0061653-3fd7-4700-bfa5-1da16d306665" name="Changes" comment="feat: report generation + dep factory refactorization">
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/example/handlers/forecast/CalculateForecastHandler.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/example/handlers/forecast/SaveForecastHandler.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/example/handlers/transaction/FetchUserTransactionsHandler.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/example/handlers/user/GetAllUsersHandler.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/example/model/Forecast.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/example/model/request/ForecastCalculationRequest.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/example/model/request/ForecastRequest.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/example/repository/contract/ForecastRepository.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/example/repository/implementation/ForecastRepositoryImpl.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/example/service/contract/ForecastService.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/example/service/implementation/ForecastServiceImpl.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/example/strategy/ForecastingStrategy.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/example/strategy/SimpleAverageStrategy.java" afterDir="false" />
+    <list default="true" id="e0061653-3fd7-4700-bfa5-1da16d306665" name="Changes" comment="feat: forecasting">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/factory/DependencyFactory.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/factory/DependencyFactory.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/repository/contract/TransactionRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/repository/contract/TransactionRepository.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/repository/implementation/TransactionRepositoryImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/repository/implementation/TransactionRepositoryImpl.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/service/contract/TransactionService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/service/contract/TransactionService.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/service/implementation/TransactionServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/service/implementation/TransactionServiceImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/handlers/forecast/SaveForecastHandler.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/handlers/forecast/SaveForecastHandler.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -100,7 +83,7 @@
       <workItem from="1750223162704" duration="311000" />
       <workItem from="1750244175248" duration="603000" />
       <workItem from="1750321308616" duration="20750000" />
-      <workItem from="1750839164521" duration="4790000" />
+      <workItem from="1750839164521" duration="6755000" />
     </task>
     <task id="LOCAL-00001" summary="feat: creating transactions">
       <option name="closed" value="true" />
@@ -166,7 +149,15 @@
       <option name="project" value="LOCAL" />
       <updated>1750521107487</updated>
     </task>
-    <option name="localTasksCounter" value="9" />
+    <task id="LOCAL-00009" summary="feat: forecasting">
+      <option name="closed" value="true" />
+      <created>1750845048107</created>
+      <option name="number" value="00009" />
+      <option name="presentableId" value="LOCAL-00009" />
+      <option name="project" value="LOCAL" />
+      <updated>1750845048107</updated>
+    </task>
+    <option name="localTasksCounter" value="10" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -180,6 +171,7 @@
     <MESSAGE value="feat: saving goal repository and model" />
     <MESSAGE value="feat: saving goal service and handlers" />
     <MESSAGE value="feat: report generation + dep factory refactorization" />
-    <option name="LAST_COMMIT_MESSAGE" value="feat: report generation + dep factory refactorization" />
+    <MESSAGE value="feat: forecasting" />
+    <option name="LAST_COMMIT_MESSAGE" value="feat: forecasting" />
   </component>
 </project>
