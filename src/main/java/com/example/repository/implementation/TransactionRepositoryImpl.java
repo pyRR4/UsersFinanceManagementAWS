@@ -87,6 +87,22 @@ public class TransactionRepositoryImpl extends AbstractRdsRepository<Transaction
     }
 
     @Override
+    public List<Transaction> findAllForUserInDateRange(int userId, String startDate, String endDate) {
+        String sql = "SELECT id, amount, date, description, category_id FROM transactions " +
+                "WHERE user_id = :user_id AND date >= :start_date::timestamp AND date < :end_date::timestamp " +
+                "ORDER BY date ASC";
+
+        SqlParameter userParam = userIdParam(userId);
+        SqlParameter startParam = SqlParameter.builder().name("start_date").value(Field.builder().stringValue(startDate).build()).build();
+        SqlParameter endParam = SqlParameter.builder().name("end_date").value(Field.builder().stringValue(endDate).build()).build();
+
+        ExecuteStatementRequest request = createExecuteStatementRequest(sql, userParam, startParam, endParam);
+        ExecuteStatementResponse response = rdsDataClient.executeStatement(request);
+
+        return mapResponseToList(response);
+    }
+
+    @Override
     public Optional<Transaction> findByIdAndUserId(int transactionId, int userId) {
         String sql = "SELECT id, amount, date, description, category_id FROM transactions WHERE id = :transaction_id AND user_id = :user_id";
         SqlParameter idParam = transactionIdParam(transactionId);

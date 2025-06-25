@@ -1,5 +1,6 @@
 package com.example.factory;
 
+import com.example.strategy.SimpleAverageStrategy;
 import com.google.gson.Gson;
 import com.example.config.DatabaseConfig;
 import com.example.repository.contract.*;
@@ -63,6 +64,7 @@ public class DependencyFactory {
         register(TransactionRepository.class, new TransactionRepositoryImpl(rdsDataClient, dbConfig));
         register(CategoryRepository.class, new CategoryRepositoryImpl(rdsDataClient, dbConfig));
         register(SavingGoalRepository.class, new SavingGoalRepositoryImpl(rdsDataClient, dbConfig));
+        register(ForecastRepository.class, new ForecastRepositoryImpl(rdsDataClient, dbConfig));
     }
 
     /**
@@ -81,6 +83,8 @@ public class DependencyFactory {
                 getService(TransactionRepository.class),
                 getService(TransactionManager.class)
         ));
+        register(ForecastService.class, new ForecastServiceImpl(getService(ForecastRepository.class)));
+        register(SimpleAverageStrategy.class, new SimpleAverageStrategy());
     }
 
     /**

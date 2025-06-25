@@ -31,6 +31,11 @@ public class TransactionServiceImpl implements TransactionService {
     }
 
     @Override
+    public List<Transaction> findAllForUserInDateRange(int userId, String startDate, String endDate) {
+        return transactionRepository.findAllForUserInDateRange(userId, startDate, endDate);
+    }
+
+    @Override
     public Optional<Transaction> getTransactionById(int transactionId, int userId) {
         return transactionRepository.findByIdAndUserId(transactionId, userId);
     }

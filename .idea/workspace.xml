@@ -4,28 +4,26 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="e0061653-3fd7-4700-bfa5-1da16d306665" name="Changes" comment="feat: saving goal service and handlers">
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/example/handlers/raport/ReportGenerationWorkerHandler.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/example/handlers/raport/StartReportGenerationHandler.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/example/service/contract/NotificationService.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/example/service/contract/StorageService.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/example/service/contract/UserService.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/example/service/contract/report/ReportDistributionService.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/example/service/contract/report/ReportFormattingService.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/example/service/contract/report/ReportingJobService.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/example/service/implementation/S3StorageService.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/example/service/implementation/SnsNotificationService.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/example/service/implementation/UserServiceImpl.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/example/service/implementation/report/ReportDistributionServiceImpl.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/example/service/implementation/report/ReportingJobServiceImpl.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/example/service/implementation/report/TextReportFormattingService.java" afterDir="false" />
+    <list default="true" id="e0061653-3fd7-4700-bfa5-1da16d306665" name="Changes" comment="feat: report generation + dep factory refactorization">
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/example/handlers/forecast/CalculateForecastHandler.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/example/handlers/forecast/SaveForecastHandler.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/example/handlers/transaction/FetchUserTransactionsHandler.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/example/handlers/user/GetAllUsersHandler.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/example/model/Forecast.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/example/model/request/ForecastCalculationRequest.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/example/model/request/ForecastRequest.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/example/repository/contract/ForecastRepository.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/example/repository/implementation/ForecastRepositoryImpl.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/example/service/contract/ForecastService.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/example/service/implementation/ForecastServiceImpl.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/example/strategy/ForecastingStrategy.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/example/strategy/SimpleAverageStrategy.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/example/factory/DependencyFactory.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/factory/DependencyFactory.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/example/repository/contract/TransactionRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/repository/contract/TransactionRepository.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/repository/contract/UserRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/repository/contract/UserRepository.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/example/repository/implementation/TransactionRepositoryImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/repository/implementation/TransactionRepositoryImpl.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/repository/implementation/UserRepositoryImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/repository/implementation/UserRepositoryImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/service/contract/TransactionService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/service/contract/TransactionService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/service/implementation/TransactionServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/service/implementation/TransactionServiceImpl.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -101,7 +99,8 @@
       <workItem from="1750200614799" duration="617000" />
       <workItem from="1750223162704" duration="311000" />
       <workItem from="1750244175248" duration="603000" />
-      <workItem from="1750321308616" duration="17664000" />
+      <workItem from="1750321308616" duration="20750000" />
+      <workItem from="1750839164521" duration="4790000" />
     </task>
     <task id="LOCAL-00001" summary="feat: creating transactions">
       <option name="closed" value="true" />
@@ -159,7 +158,15 @@
       <option name="project" value="LOCAL" />
       <updated>1750345094005</updated>
     </task>
-    <option name="localTasksCounter" value="8" />
+    <task id="LOCAL-00008" summary="feat: report generation + dep factory refactorization">
+      <option name="closed" value="true" />
+      <created>1750521107487</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1750521107487</updated>
+    </task>
+    <option name="localTasksCounter" value="9" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -172,6 +179,7 @@
     <MESSAGE value="feat: categories get, post, put and code refactorization" />
     <MESSAGE value="feat: saving goal repository and model" />
     <MESSAGE value="feat: saving goal service and handlers" />
-    <option name="LAST_COMMIT_MESSAGE" value="feat: saving goal service and handlers" />
+    <MESSAGE value="feat: report generation + dep factory refactorization" />
+    <option name="LAST_COMMIT_MESSAGE" value="feat: report generation + dep factory refactorization" />
   </component>
 </project>

@@ -13,6 +13,7 @@ public interface TransactionRepository {
     List<Transaction> findAllByUserId(int userId);
     List<Transaction> findAllByUserIdAndCategoryId(int userId, int categoryId);
     List<Transaction> findAllByUserIdAndMonth(int userId, int year, int month);
+    List<Transaction> findAllForUserInDateRange(int userId, String startDate, String endDate);
 
     Optional<Transaction> findByIdAndUserId(int transactionId, int userId);
 
