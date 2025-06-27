@@ -17,7 +17,7 @@ public class GetTransactionsHandler extends AbstractHandler<TransactionService> 
 
     @Override
     protected HandlerResponse handleRequestLogic(APIGatewayProxyRequestEvent request, Context context) {
-        int userId = authService.getUserId(request);
+        int userId = authService.getUserId(request, context);
 
         List<Transaction> transactions;
         Map<String, String> queryParams = request.getQueryStringParameters();

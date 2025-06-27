@@ -17,7 +17,7 @@ public class GetTransactionByIdHandler extends AbstractHandler<TransactionServic
 
     @Override
     protected HandlerResponse handleRequestLogic(APIGatewayProxyRequestEvent request, Context context) {
-        int userId = authService.getUserId(request);
+        int userId = authService.getUserId(request, context);
         String transactionIdStr = request.getPathParameters().get("id");
         int transactionId = Integer.parseInt(transactionIdStr);
 

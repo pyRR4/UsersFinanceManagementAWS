@@ -14,7 +14,7 @@ public class UpdateCategoryHandler extends AbstractHandler<CategoryService> {
 
     @Override
     protected HandlerResponse handleRequestLogic(APIGatewayProxyRequestEvent request, Context context) {
-        int userId = authService.getUserId(request);
+        int userId = authService.getUserId(request, context);
         int categoryId = Integer.parseInt(request.getPathParameters().get("id"));
         String name = request.getPathParameters().get("name");
 

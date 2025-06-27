@@ -1,18 +1,25 @@
 variable "aws_region" {
   description = "Region AWS, w którym wdrażane są wszystkie zasoby."
   type        = string
-  default     = "eu-central-1"
+  default     = "us-east-1"
 }
 
 variable "project_name" {
-  description = "Nazwa projektu, używana do tworzenia nazw i tagów dla zasobów."
+  description = "Krótka, unikalna nazwa projektu (bez spacji, małe litery), używana do tworzenia nazw zasobów."
   type        = string
+  default     = "finanse-app"
 }
 
 variable "environment" {
-  description = "Nazwa środowiska (np. dev, stage, prod)."
+  description = "Nazwa środowiska (np. dev, stage, prod), używana do tworzenia nazw i tagów."
   type        = string
   default     = "dev"
+}
+
+variable "db_name" {
+  description = "Nazwa głównej bazy danych do utworzenia wewnątrz instancji RDS."
+  type        = string
+  default     = "aplikacja_finansowa"
 }
 
 variable "db_username" {
@@ -22,13 +29,22 @@ variable "db_username" {
 }
 
 variable "db_password" {
-  description = "Hasło dla głównego użytkownika bazy danych."
+  description = "Hasło dla głównego użytkownika bazy danych. Powinno być podane w pliku .tfvars."
   type        = string
-  sensitive   = true # Ważne: Terraform nie będzie wyświetlał tej wartości w logach
+  sensitive   = true
 }
 
 variable "app_jar_path" {
-  description = "Ścieżka do pliku JAR z aplikacją Javy."
+  description = "Względna ścieżka do pliku JAR z aplikacją Javy."
   type        = string
-  default     = "../application/target/AplikacjaFinansowaBackend-1.0.0.jar"
+  default     = "../application/target/UsersFinanceManagementCloud-1.0.0.jar"
+}
+
+variable "tags" {
+  description = "Mapa wspólnych tagów do przypisania do wszystkich zasobów."
+  type        = map(string)
+  default = {
+    ManagedBy = "Terraform"
+    Project   = "AplikacjaFinansowa"
+  }
 }

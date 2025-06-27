@@ -8,7 +8,7 @@ import java.util.Optional;
 public interface UserRepository {
     Optional<User> findByCognitoSub(String cognitoSub);
     User create(String cognitoSub, String email);
-    double updateBalance(int userId, double balanceDelta, String transactionId);
+    double updateBalance(int userId, double balanceDelta);
     double getBalance(int userId);
-    List<User> findAll();
+    List<User> getAllActiveUsers(); // Zmieniłem nazwę z findAll na bardziej opisową
 }

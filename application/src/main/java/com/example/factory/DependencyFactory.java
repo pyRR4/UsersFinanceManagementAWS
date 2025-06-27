@@ -1,5 +1,6 @@
 package com.example.factory;
 
+import com.example.model.DatabaseCredentials;
 import com.example.strategy.SimpleAverageStrategy;
 import com.google.gson.Gson;
 import com.example.config.DatabaseConfig;
@@ -13,12 +14,15 @@ import com.example.service.implementation.*;
 import com.example.service.implementation.report.ReportDistributionServiceImpl;
 import com.example.service.implementation.report.ReportingJobServiceImpl;
 import com.example.service.implementation.report.TextReportFormattingService;
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
 import lombok.Getter;
 import software.amazon.awssdk.services.rdsdata.RdsDataClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.sns.SnsClient;
 import software.amazon.awssdk.services.sqs.SqsClient;
 
+import javax.sql.DataSource;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -45,7 +49,21 @@ public class DependencyFactory {
      * Rejestruje podstawowe, współdzielone komponenty i klientów AWS.
      */
     private void registerCoreComponents() {
-        register(DatabaseConfig.class, new DatabaseConfig());
+        DatabaseConfig dbConfig = new DatabaseConfig();
+        register(DatabaseConfig.class, dbConfig);
+
+        String secretJson = new SecretManagerServiceImpl().getSecret(dbConfig.getDbSecretArn());
+        DatabaseCredentials credentials = new Gson().fromJson(secretJson, DatabaseCredentials.class);
+
+        HikariConfig hikariConfig = new HikariConfig();
+        hikariConfig.setJdbcUrl(String.format("jdbc:postgresql://%s:%d/%s", credentials.getHost(), credentials.getPort(), credentials.getDbname()));
+        hikariConfig.setUsername(credentials.getUsername());
+        hikariConfig.setPassword(credentials.getPassword());
+        hikariConfig.setMaximumPoolSize(5);
+
+        DataSource dataSource = new HikariDataSource(hikariConfig);
+        register(DataSource.class, dataSource);
+
         register(RdsDataClient.class, RdsDataClient.builder().build());
         register(S3Client.class, S3Client.builder().build());
         register(SnsClient.class, SnsClient.builder().build());
@@ -57,21 +75,18 @@ public class DependencyFactory {
      * Rejestruje wszystkie implementacje repozytoriów.
      */
     private void registerRepositories() {
-        RdsDataClient rdsDataClient = getService(RdsDataClient.class);
-        DatabaseConfig dbConfig = getService(DatabaseConfig.class);
-
-        register(UserRepository.class, new UserRepositoryImpl(rdsDataClient, dbConfig));
-        register(TransactionRepository.class, new TransactionRepositoryImpl(rdsDataClient, dbConfig));
-        register(CategoryRepository.class, new CategoryRepositoryImpl(rdsDataClient, dbConfig));
-        register(SavingGoalRepository.class, new SavingGoalRepositoryImpl(rdsDataClient, dbConfig));
-        register(ForecastRepository.class, new ForecastRepositoryImpl(rdsDataClient, dbConfig));
+        register(UserRepository.class, new UserRepositoryImpl(getService(DataSource.class)));
+        register(TransactionRepository.class, new TransactionRepositoryImpl(getService(DataSource.class)));
+        register(CategoryRepository.class, new CategoryRepositoryImpl(getService(DataSource.class)));
+        register(SavingGoalRepository.class, new SavingGoalRepositoryImpl(getService(DataSource.class)));
+        register(ForecastRepository.class, new ForecastRepositoryImpl(getService(DataSource.class)));
     }
 
     /**
      * Rejestruje główne serwisy logiki biznesowej.
      */
     private void registerBusinessServices() {
-        register(AuthService.class, new AuthServiceImpl(getService(UserRepository.class)));
+        register(AuthService.class, new AuthServiceImpl(getService(UserRepository.class), getService(Gson.class)));
         register(UserService.class, new UserServiceImpl(getService(UserRepository.class)));
         register(TransactionService.class, new TransactionServiceImpl(getService(TransactionRepository.class)));
         register(CategoryService.class, new CategoryServiceImpl(getService(CategoryRepository.class)));

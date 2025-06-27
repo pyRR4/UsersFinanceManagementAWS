@@ -15,7 +15,7 @@ public class CreateTransactionHandler extends AbstractHandler<TransactionService
 
     @Override
     protected HandlerResponse handleRequestLogic(APIGatewayProxyRequestEvent request, Context context) {
-        int userId = authService.getUserId(request);
+        int userId = authService.getUserId(request, context);
         TransactionRequest transactionRequest = gson.fromJson(request.getBody(), TransactionRequest.class);
         service.createTransaction(transactionRequest, userId);
 

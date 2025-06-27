@@ -13,7 +13,7 @@ public class DeleteTransactionHandler extends AbstractHandler<TransactionService
 
     @Override
     protected HandlerResponse handleRequestLogic(APIGatewayProxyRequestEvent request, Context context) {
-        int userId = authService.getUserId(request);
+        int userId = authService.getUserId(request, context);
         int transactionId = Integer.parseInt(request.getPathParameters().get("id"));
 
         service.deleteByIdAndUserId(transactionId, userId);

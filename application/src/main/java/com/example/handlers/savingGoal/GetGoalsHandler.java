@@ -16,7 +16,7 @@ public class GetGoalsHandler extends AbstractHandler<SavingGoalService> {
 
     @Override
     protected HandlerResponse handleRequestLogic(APIGatewayProxyRequestEvent request, Context context) {
-        int userId = authService.getUserId(request);
+        int userId = authService.getUserId(request, context);
         List<SavingGoal> goals = service.getGoalsForUser(userId);
 
         return new HandlerResponse(200, gson.toJson(goals));

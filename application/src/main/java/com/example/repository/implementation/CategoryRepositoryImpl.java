@@ -1,121 +1,135 @@
 package com.example.repository.implementation;
 
-import com.example.config.DatabaseConfig;
 import com.example.model.Category;
-import com.example.repository.AbstractRdsRepository;
+import com.example.repository.AbstractJdbcRepository;
 import com.example.repository.contract.CategoryRepository;
-import software.amazon.awssdk.services.rdsdata.RdsDataClient;
-import software.amazon.awssdk.services.rdsdata.model.ExecuteStatementRequest;
-import software.amazon.awssdk.services.rdsdata.model.ExecuteStatementResponse;
-import software.amazon.awssdk.services.rdsdata.model.Field;
-import software.amazon.awssdk.services.rdsdata.model.SqlParameter;
 
+import javax.sql.DataSource;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-public class CategoryRepositoryImpl extends AbstractRdsRepository<Category> implements CategoryRepository {
+public class CategoryRepositoryImpl extends AbstractJdbcRepository implements CategoryRepository {
 
-    public CategoryRepositoryImpl(RdsDataClient rdsDataClient, DatabaseConfig dbConfig) {
-        super(rdsDataClient, dbConfig);
+    public CategoryRepositoryImpl(DataSource dataSource) {
+        super(dataSource);
     }
 
+    /**
+     * Tworzy nową kategorię w bazie danych.
+     * Zgodnie z kontraktem, nie zwraca nowo utworzonego obiektu.
+     */
     @Override
     public void create(String name, int userId) {
-        String sql = "INSERT INTO categories (name, user_id) VALUES (:name, :user_id)";
+        String sql = "INSERT INTO categories (name, user_id) VALUES (?, ?)";
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
 
-        SqlParameter nameParam = nameParam(name);
-        SqlParameter userParam = userParam(userId);
-
-        ExecuteStatementRequest request = createExecuteStatementRequest(sql, nameParam, userParam);
-        rdsDataClient.executeStatement(request);
+            ps.setString(1, name);
+            ps.setInt(2, userId);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            // W prawdziwej aplikacji warto stworzyć bardziej specyficzny wyjątek
+            throw new RuntimeException("Error creating category", e);
+        }
     }
 
     @Override
     public List<Category> findAllByUserId(int userId) {
-        String sql = "SELECT id, name FROM categories WHERE user_id = :user_id ORDER BY name ASC";
-        SqlParameter userParam = userParam(userId);
+        List<Category> categories = new ArrayList<>();
+        String sql = "SELECT id, name FROM categories WHERE user_id = ? ORDER BY name ASC";
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
 
-        ExecuteStatementRequest request = createExecuteStatementRequest(sql, userParam);
-        ExecuteStatementResponse response = rdsDataClient.executeStatement(request);
-
-        return mapResponseToList(response);
+            ps.setInt(1, userId);
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                categories.add(mapRowToCategory(rs));
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Error fetching categories for user " + userId, e);
+        }
+        return categories;
     }
 
     @Override
     public void update(int categoryId, String name, int userId) {
-        String sql = "UPDATE categories SET name = :name WHERE id = :category_id AND user_id = :user_id";
+        String sql = "UPDATE categories SET name = ? WHERE id = ? AND user_id = ?";
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
 
-        SqlParameter nameParam = nameParam(name);
-        SqlParameter categoryParam = idParam(categoryId);
-        SqlParameter userParam = userParam(userId);
-
-        ExecuteStatementRequest request = createExecuteStatementRequest(sql, nameParam, categoryParam, userParam);
-        rdsDataClient.executeStatement(request);
+            ps.setString(1, name);
+            ps.setInt(2, categoryId);
+            ps.setInt(3, userId);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException("Error updating category", e);
+        }
     }
 
     @Override
     public void deleteByIdAndUserId(int id, int userId) {
-        String sql = "DELETE FROM categories WHERE id = :id AND user_id = :user_id";
+        String sql = "DELETE FROM categories WHERE id = ? AND user_id = ?";
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
 
-        SqlParameter idParam = idParam(id);
-        SqlParameter userParam = userParam(userId);
-
-        ExecuteStatementRequest request = createExecuteStatementRequest(sql, idParam, userParam);
-        rdsDataClient.executeStatement(request);
+            ps.setInt(1, id);
+            ps.setInt(2, userId);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException("Error deleting category", e);
+        }
     }
 
     @Override
     public Optional<Category> findByNameAndUserId(String name, int userId) {
-        String sql = "SELECT id, name FROM categories WHERE name = :name AND user_id = :user_id";
+        String sql = "SELECT id, name FROM categories WHERE name = ? AND user_id = ?";
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
 
-        SqlParameter nameParam = nameParam(name);
-        SqlParameter userParam = userParam(userId);
+            ps.setString(1, name);
+            ps.setInt(2, userId);
+            ResultSet rs = ps.executeQuery();
 
-        ExecuteStatementRequest request = createExecuteStatementRequest(sql, nameParam, userParam);
-        ExecuteStatementResponse response = rdsDataClient.executeStatement(request);
-
-        return mapResponseToList(response).stream().findFirst();
+            if (rs.next()) {
+                return Optional.of(mapRowToCategory(rs));
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Error fetching category by name", e);
+        }
+        return Optional.empty();
     }
 
     @Override
     public Optional<Category> findByIdAndUserId(int categoryId, int userId) {
-        String sql = "SELECT id, name FROM categories WHERE id = :category_id AND user_id = :user_id";
+        String sql = "SELECT id, name FROM categories WHERE id = ? AND user_id = ?";
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
 
-        SqlParameter categoryParam = SqlParameter.builder().name("category_id").value(Field.builder().longValue((long) categoryId).build()).build();
-        SqlParameter userParam = SqlParameter.builder().name("user_id").value(Field.builder().longValue((long) userId).build()).build();
+            ps.setInt(1, categoryId);
+            ps.setInt(2, userId);
+            ResultSet rs = ps.executeQuery();
 
-        ExecuteStatementRequest request = createExecuteStatementRequest(sql, categoryParam, userParam);
-        ExecuteStatementResponse response = rdsDataClient.executeStatement(request);
-
-        return mapResponseToList(response).stream().findFirst();
+            if (rs.next()) {
+                return Optional.of(mapRowToCategory(rs));
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Error fetching category by id", e);
+        }
+        return Optional.empty();
     }
 
-    @Override
-    protected Category mapToEntity(List<Field> record) {
+    /**
+     * Prywatna metoda pomocnicza do mapowania wiersza z ResultSet na obiekt Category.
+     */
+    private Category mapRowToCategory(ResultSet rs) throws SQLException {
         return new Category(
-                record.get(0).longValue().intValue(),   // id
-                record.get(1).stringValue()             // name
+                rs.getInt("id"),
+                rs.getString("name")
         );
-    }
-
-    private SqlParameter idParam(int id) {
-        return SqlParameter.builder()
-                .name("id")
-                .value(Field.builder().longValue((long) id).build())
-                .build();
-    }
-
-    private SqlParameter nameParam(String name) {
-        return SqlParameter.builder()
-                .name("name")
-                .value(Field.builder().stringValue(name).build())
-                .build();
-    }
-
-    private SqlParameter userParam(int userId) {
-        return SqlParameter.builder()
-                .name("user_id")
-                .value(Field.builder().longValue((long) userId).build())
-                .build();
     }
 }

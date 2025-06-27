@@ -1,133 +1,120 @@
 package com.example.repository.implementation;
 
-import com.example.config.DatabaseConfig;
 import com.example.exception.ResourceNotFoundException;
 import com.example.model.User;
-import com.example.repository.AbstractRdsRepository;
+import com.example.repository.AbstractJdbcRepository;
 import com.example.repository.contract.UserRepository;
-import software.amazon.awssdk.services.rdsdata.RdsDataClient;
-import software.amazon.awssdk.services.rdsdata.model.ExecuteStatementRequest;
-import software.amazon.awssdk.services.rdsdata.model.ExecuteStatementResponse;
-import software.amazon.awssdk.services.rdsdata.model.Field;
-import software.amazon.awssdk.services.rdsdata.model.SqlParameter;
 
-import java.math.BigDecimal;
+import javax.sql.DataSource;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+public class UserRepositoryImpl extends AbstractJdbcRepository implements UserRepository {
 
-public class UserRepositoryImpl extends AbstractRdsRepository<User> implements UserRepository {
-
-    public UserRepositoryImpl(RdsDataClient rdsDataClient, DatabaseConfig databaseConfig) {
-        super(rdsDataClient, databaseConfig);
+    public UserRepositoryImpl(DataSource dataSource) {
+        super(dataSource);
     }
 
     @Override
     public Optional<User> findByCognitoSub(String cognitoSub) {
-        String sql = "SELECT id, cognito_sub, email, balance, created_at FROM users WHERE cognito_sub = :cognito_sub";
-        SqlParameter param = subParam(cognitoSub);
+        String sql = "SELECT id, cognito_sub, email, balance, created_at FROM users WHERE cognito_sub = ?";
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
 
-        ExecuteStatementRequest request = createExecuteStatementRequest(sql, param);
-        ExecuteStatementResponse response = rdsDataClient.executeStatement(request);
-
-        return mapResponseToList(response).stream().findFirst();
+            ps.setString(1, cognitoSub);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                return Optional.of(mapRowToUser(rs));
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Error fetching user by cognito sub", e);
+        }
+        return Optional.empty();
     }
 
     @Override
     public User create(String cognitoSub, String email) {
-        String sql = "INSERT INTO users (cognito_sub, email) VALUES (:cognito_sub, :email) RETURNING id, cognito_sub, email, balance, created_at";
+        String sql = "INSERT INTO users (cognito_sub, email) VALUES (?, ?) RETURNING id, cognito_sub, email, balance, created_at";
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
 
-        SqlParameter subParam = subParam(cognitoSub);
-        SqlParameter emailParam = emailParam(email);
-
-        ExecuteStatementRequest request = createExecuteStatementRequest(sql, subParam, emailParam);
-        ExecuteStatementResponse response = rdsDataClient.executeStatement(request);
-
-        return mapResponseToList(response).get(0);
+            ps.setString(1, cognitoSub);
+            ps.setString(2, email);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                return mapRowToUser(rs);
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Error creating user", e);
+        }
+        throw new IllegalStateException("Could not create user and retrieve its data.");
     }
 
     @Override
-    public double updateBalance(int userId, double balanceDelta, String transactionId) {
-        String sql = "UPDATE users SET balance = balance + :balance_delta " +
-                "WHERE id = :user_id " +
-                "RETURNING balance";
+    public double updateBalance(int userId, double balanceDelta) {
+        String sql = "UPDATE users SET balance = balance + ? WHERE id = ? RETURNING balance";
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
 
-        SqlParameter idParam = idParam(userId);
-        SqlParameter balanceDeltaParam = balanceDeltaParam(balanceDelta);
-
-        ExecuteStatementRequest request = createExecuteStatementRequest(sql, transactionId, idParam, balanceDeltaParam);
-        ExecuteStatementResponse response = rdsDataClient.executeStatement(request);
-
-        if(response.records() == null || response.records().isEmpty()) {
-            throw new ResourceNotFoundException("User not found with id: " + userId + ", cannot update balance.");
+            ps.setDouble(1, balanceDelta);
+            ps.setInt(2, userId);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                return rs.getDouble("balance");
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Error updating user balance", e);
         }
-
-        return response.records().get(0).get(0).doubleValue();
+        throw new ResourceNotFoundException("User not found with id: " + userId + ", cannot update balance.");
     }
 
     @Override
     public double getBalance(int userId) {
-        String sql = "SELECT balance FROM users WHERE id = :user_id";
+        String sql = "SELECT balance FROM users WHERE id = ?";
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
 
-        SqlParameter idParam = idParam(userId);
-
-        ExecuteStatementRequest request = createExecuteStatementRequest(sql, idParam);
-        ExecuteStatementResponse response = rdsDataClient.executeStatement(request);
-
-        if(response.records() == null || response.records().isEmpty()) {
-            throw new ResourceNotFoundException("User not found with id: " + userId + ", cannot get balance.");
+            ps.setInt(1, userId);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                return rs.getDouble("balance");
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Error fetching user balance", e);
         }
-
-        return response.records().get(0).get(0).doubleValue();
+        throw new ResourceNotFoundException("User not found with id: " + userId);
     }
 
     @Override
-    public List<User> findAll() {
-        String sql = "SELECT id, cognito_sub, email, balance, created_at FROM users";
+    public List<User> getAllActiveUsers() {
+        List<User> users = new ArrayList<>();
+        String sql = "SELECT id, cognito_sub, email, balance, created_at FROM users ORDER BY id";
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
 
-        ExecuteStatementRequest request = createExecuteStatementRequest(sql);
-        ExecuteStatementResponse response = rdsDataClient.executeStatement(request);
-
-        return mapResponseToList(response);
+            while (rs.next()) {
+                users.add(mapRowToUser(rs));
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Error fetching all users", e);
+        }
+        return users;
     }
 
-    @Override
-    protected User mapToEntity(List<Field> record) {
+    private User mapRowToUser(ResultSet rs) throws SQLException {
         return new User(
-                record.get(0).longValue().intValue(),                                                           // id
-                record.get(1).stringValue(),                                                                    // cognito_sub
-                record.get(2).stringValue(),                                                                    // email
-                BigDecimal.valueOf(record.get(3).doubleValue()),                                                // balance
-                OffsetDateTime.parse(record.get(4).stringValue().replace(" ", "T") + "Z") // created_at
+                rs.getInt("id"),
+                rs.getString("cognito_sub"),
+                rs.getString("email"),
+                rs.getBigDecimal("balance"),
+                rs.getObject("created_at", OffsetDateTime.class)
         );
-    }
-
-    private SqlParameter subParam(String cognitoSub) {
-        return SqlParameter.builder()
-                .name("cognito_sub")
-                .value(Field.builder().stringValue(cognitoSub).build())
-                .build();
-    }
-
-    private SqlParameter emailParam(String email) {
-        return SqlParameter.builder()
-                .name("email")
-                .value(Field.builder().stringValue(email).build())
-                .build();
-    }
-
-    private SqlParameter idParam(int id) {
-        return SqlParameter.builder()
-                .name("user_id")
-                .value(Field.builder().longValue((long) id).build())
-                .build();
-    }
-
-    private SqlParameter balanceDeltaParam(double balanceDelta) {
-        return SqlParameter.builder()
-                .name("balance_delta")
-                .value(Field.builder().doubleValue(balanceDelta).build())
-                .build();
     }
 }

@@ -46,10 +46,10 @@ public class SavingGoalServiceImpl implements SavingGoalService {
                     .orElseThrow(() -> new ResourceNotFoundException("Saving goal not found with id: " + goalId));
 
             if (goalToDelete.getCurrentAmount() > 0) {
-                userRepository.updateBalance(userId, goalToDelete.getCurrentAmount(), transactionId);
+                userRepository.updateBalance(userId, goalToDelete.getCurrentAmount());
             }
 
-            savingGoalRepository.deleteByIdAndUserId(goalId, userId, transactionId);
+            savingGoalRepository.deleteByIdAndUserId(goalId, userId);
         });
     }
 
@@ -68,7 +68,7 @@ public class SavingGoalServiceImpl implements SavingGoalService {
         }
 
         transactionManager.execute(transactionId -> {
-            userRepository.updateBalance(userId, -amountToAdd, transactionId);
+            userRepository.updateBalance(userId, -amountToAdd);
             savingGoalRepository.addFunds(goalId, userId, amountToAdd);
         });
     }

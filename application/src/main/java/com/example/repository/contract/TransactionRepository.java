@@ -8,16 +8,10 @@ import java.util.Optional;
 
 public interface TransactionRepository {
     void save(TransactionRequest transaction, int userId);
-    void save(TransactionRequest transaction, int userId, String transactionId);
-
     List<Transaction> findAllByUserId(int userId);
     List<Transaction> findAllByUserIdAndCategoryId(int userId, int categoryId);
-    List<Transaction> findAllByUserIdAndMonth(int userId, int year, int month);
     List<Transaction> findAllForUserInDateRange(int userId, String startDate, String endDate);
-
     Optional<Transaction> findByIdAndUserId(int transactionId, int userId);
-
     void deleteByIdAndUserId(int transactionId, int userId);
-
     void update(int transactionId, int userId, TransactionRequest transactionDetails);
 }

@@ -1,9 +1,11 @@
 package com.example.service.implementation;
 
+import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.example.repository.contract.UserRepository;
 import com.example.service.contract.AuthService;
 import com.example.model.User;
+import com.google.gson.Gson;
 import lombok.RequiredArgsConstructor;
 
 import java.util.Map;
@@ -12,10 +14,12 @@ import java.util.Map;
 public class AuthServiceImpl implements AuthService {
 
     private final UserRepository userRepository;
+    private final Gson gson;
 
     @Override
-    public int getUserId(APIGatewayProxyRequestEvent request) {
+    public int getUserId(APIGatewayProxyRequestEvent request, Context context) {
         Map<String, Object> authorizer = request.getRequestContext().getAuthorizer();
+        context.getLogger().log("Received authentication request: " + gson.toJson(request));
         if (authorizer == null || !authorizer.containsKey("claims")) {
             throw new RuntimeException("Authorization context not found.");
         }

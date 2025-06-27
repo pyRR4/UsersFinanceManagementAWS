@@ -1,211 +1,125 @@
 package com.example.repository.implementation;
 
-import com.example.config.DatabaseConfig;
 import com.example.model.Transaction;
 import com.example.model.request.TransactionRequest;
-import com.example.repository.AbstractRdsRepository;
+import com.example.repository.AbstractJdbcRepository;
 import com.example.repository.contract.TransactionRepository;
-import software.amazon.awssdk.services.rdsdata.RdsDataClient;
-import software.amazon.awssdk.services.rdsdata.model.ExecuteStatementRequest;
-import software.amazon.awssdk.services.rdsdata.model.ExecuteStatementResponse;
-import software.amazon.awssdk.services.rdsdata.model.Field;
-import software.amazon.awssdk.services.rdsdata.model.SqlParameter;
 
+import javax.sql.DataSource;
+import java.sql.*;
+import java.time.OffsetDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-public class TransactionRepositoryImpl extends AbstractRdsRepository<Transaction> implements TransactionRepository {
+public class TransactionRepositoryImpl extends AbstractJdbcRepository implements TransactionRepository {
 
-    public TransactionRepositoryImpl(RdsDataClient rdsDataClient, DatabaseConfig dbConfig) {
-        super(rdsDataClient, dbConfig);
+    public TransactionRepositoryImpl(DataSource dataSource) {
+        super(dataSource);
     }
 
     @Override
     public void save(TransactionRequest transaction, int userId) {
-        this.save(transaction, userId, null);
-    }
+        String sql = "INSERT INTO transactions (user_id, amount, date, description, category_id) VALUES (?, ?, ?, ?, ?)";
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
 
-    @Override
-    public void save(TransactionRequest transaction, int userId, String transactionId) {
-        String sql = "INSERT INTO transactions (user_id, amount, date, description, category_id) " +
-                "VALUES (:user_id, :amount, :date, :description, :category_id)";
+            ps.setInt(1, userId);
+            ps.setDouble(2, transaction.getAmount());
+            ps.setObject(3, OffsetDateTime.parse(transaction.getDate()));
+            ps.setString(4, transaction.getDescription());
+            ps.setInt(5, transaction.getCategoryId());
 
-        SqlParameter userParam = userIdParam(userId);
-        SqlParameter amountParam = amountParam(transaction.getAmount());
-        SqlParameter dateParam = dateParam(transaction.getDate());
-        SqlParameter descParam = descParam(transaction.getDescription());
-        SqlParameter categoryParam = categoryIdParam(transaction.getCategoryId());
-
-        ExecuteStatementRequest request = createExecuteStatementRequest(sql, transactionId, userParam, amountParam, dateParam, descParam, categoryParam);
-
-        rdsDataClient.executeStatement(request);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException("Error saving transaction", e);
+        }
     }
 
     @Override
     public List<Transaction> findAllByUserId(int userId) {
-        String sql = "SELECT id, amount, date, description, category_id " +
-                "FROM transactions " +
-                "WHERE user_id = :user_id O" +
-                "RDER BY date DESC";
-        SqlParameter param = userIdParam(userId);
-
-        ExecuteStatementRequest request = createExecuteStatementRequest(sql, param);
-
-        ExecuteStatementResponse response = rdsDataClient.executeStatement(request);
-
-        return mapResponseToList(response);
+        String sql = "SELECT id, amount, date, description, category_id FROM transactions WHERE user_id = ? ORDER BY date DESC";
+        return findManyByQuery(sql, userId);
     }
 
     @Override
     public List<Transaction> findAllByUserIdAndCategoryId(int userId, int categoryId) {
-        String sql = "SELECT id, amount, date, description, category_id FROM transactions " +
-                "WHERE user_id = :user_id AND category_id = :category_id ORDER BY date DESC";
-
-        SqlParameter userParam = userIdParam(userId);
-        SqlParameter categoryParam = categoryIdParam(categoryId);
-
-        ExecuteStatementRequest request = createExecuteStatementRequest(sql, userParam, categoryParam);
-        ExecuteStatementResponse response = rdsDataClient.executeStatement(request);
-
-        return mapResponseToList(response);
-    }
-
-    @Override
-    public List<Transaction> findAllByUserIdAndMonth(int userId, int year, int month) {
-        String sql = "SELECT id, amount, date, description, category_id FROM transactions" +
-                "WHERE user_id = :user_id AND EXTRACT(YEAR FROM date) = :year AND EXTRACT(MONTH FROM date) = :month" +
-                "ORDER BY date ASC";
-
-        SqlParameter userParam = userIdParam(userId);
-        SqlParameter yearParam = yearParam(year);
-        SqlParameter monthParam = monthParam(month);
-
-        ExecuteStatementRequest request = createExecuteStatementRequest(sql, userParam, yearParam, monthParam);
-        ExecuteStatementResponse response = rdsDataClient.executeStatement(request);
-
-        return mapResponseToList(response);
+        String sql = "SELECT id, amount, date, description, category_id FROM transactions WHERE user_id = ? AND category_id = ? ORDER BY date DESC";
+        return findManyByQuery(sql, userId, categoryId);
     }
 
     @Override
     public List<Transaction> findAllForUserInDateRange(int userId, String startDate, String endDate) {
         String sql = "SELECT id, amount, date, description, category_id FROM transactions " +
-                "WHERE user_id = :user_id AND date >= :start_date::timestamp AND date < :end_date::timestamp " +
-                "ORDER BY date ASC";
-
-        SqlParameter userParam = userIdParam(userId);
-        SqlParameter startParam = SqlParameter.builder().name("start_date").value(Field.builder().stringValue(startDate).build()).build();
-        SqlParameter endParam = SqlParameter.builder().name("end_date").value(Field.builder().stringValue(endDate).build()).build();
-
-        ExecuteStatementRequest request = createExecuteStatementRequest(sql, userParam, startParam, endParam);
-        ExecuteStatementResponse response = rdsDataClient.executeStatement(request);
-
-        return mapResponseToList(response);
+                "WHERE user_id = ? AND date >= ?::timestamptz AND date < ?::timestamptz ORDER BY date ASC";
+        return findManyByQuery(sql, userId, startDate, endDate);
     }
 
     @Override
     public Optional<Transaction> findByIdAndUserId(int transactionId, int userId) {
-        String sql = "SELECT id, amount, date, description, category_id FROM transactions WHERE id = :transaction_id AND user_id = :user_id";
-        SqlParameter idParam = transactionIdParam(transactionId);
-        SqlParameter userParam = userIdParam(userId);
-
-        ExecuteStatementRequest request = createExecuteStatementRequest(sql, idParam, userParam);
-        ExecuteStatementResponse response = rdsDataClient.executeStatement(request);
-
-        return mapResponseToList(response).stream().findFirst();
+        String sql = "SELECT id, amount, date, description, category_id FROM transactions WHERE id = ? AND user_id = ?";
+        List<Transaction> results = findManyByQuery(sql, transactionId, userId);
+        return results.stream().findFirst();
     }
 
     @Override
     public void deleteByIdAndUserId(int transactionId, int userId) {
-        String sql = "DELETE FROM transactions WHERE id = :transaction_id AND user_id = :user_id";
-        SqlParameter idParam = transactionIdParam(transactionId);
-        SqlParameter userParam = userIdParam(userId);
+        String sql = "DELETE FROM transactions WHERE id = ? AND user_id = ?";
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
 
-        ExecuteStatementRequest request = createExecuteStatementRequest(sql, idParam, userParam);
-        rdsDataClient.executeStatement(request);
+            ps.setInt(1, transactionId);
+            ps.setInt(2, userId);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException("Error deleting transaction", e);
+        }
     }
 
     @Override
-    public void update(int transactionId, int userId, TransactionRequest transactionDetails) {
-        String sql = "UPDATE transactions SET amount = :amount, category_id = :category_id, " +
-                "description = :description, date = :date " +
-                "WHERE id = :transaction_id AND user_id = :user_id";
+    public void update(int transactionId, int userId, TransactionRequest details) {
+        String sql = "UPDATE transactions SET amount = ?, category_id = ?, description = ?, date = ? WHERE id = ? AND user_id = ?";
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
 
-        SqlParameter amountParam = amountParam(transactionDetails.getAmount());
-        SqlParameter categoryParam = categoryIdParam(transactionDetails.getCategoryId());
-        SqlParameter descriptionParam = descParam(transactionDetails.getDescription());
-        SqlParameter dateParam = dateParam(transactionDetails.getDate());
-        SqlParameter idParam = transactionIdParam(transactionId);
-        SqlParameter userParam = userIdParam(userId);
-
-        ExecuteStatementRequest request = createExecuteStatementRequest(sql, amountParam,
-                categoryParam, descriptionParam, dateParam, idParam, userParam);
-        rdsDataClient.executeStatement(request);
+            ps.setDouble(1, details.getAmount());
+            ps.setInt(2, details.getCategoryId());
+            ps.setString(3, details.getDescription());
+            ps.setObject(4, OffsetDateTime.parse(details.getDate()));
+            ps.setInt(5, transactionId);
+            ps.setInt(6, userId);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException("Error updating transaction", e);
+        }
     }
 
-    @Override
-    protected Transaction mapToEntity(List<Field> record) {
+    private List<Transaction> findManyByQuery(String sql, Object... params) {
+        List<Transaction> transactions = new ArrayList<>();
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            for (int i = 0; i < params.length; i++) {
+                ps.setObject(i + 1, params[i]);
+            }
+
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                transactions.add(mapRowToTransaction(rs));
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Error executing transaction query", e);
+        }
+        return transactions;
+    }
+
+    private Transaction mapRowToTransaction(ResultSet rs) throws SQLException {
         return new Transaction(
-                record.get(0).longValue().intValue(),                           // id
-                record.get(1).doubleValue(),                                    // amount
-                record.get(2).stringValue(),                                    // date
-                record.get(3).isNull() ? null : record.get(3).stringValue(),    // description
-                record.get(4).longValue().intValue()                            // category_id
+                rs.getInt("id"),
+                rs.getDouble("amount"),
+                rs.getObject("date", OffsetDateTime.class).toString(),
+                rs.getString("description"),
+                rs.getInt("category_id")
         );
-    }
-
-    private SqlParameter transactionIdParam(int transactionId) {
-        return SqlParameter.builder()
-                .name("transaction_id")
-                .value(Field.builder().longValue((long)transactionId).build())
-                .build();
-    }
-
-    private SqlParameter userIdParam(int userId) {
-        return SqlParameter.builder()
-                .name("user_id")
-                .value(Field.builder().longValue((long)userId).build())
-                .build();
-    }
-
-    private SqlParameter categoryIdParam(int categoryId) {
-        return SqlParameter.builder()
-                .name("category_id")
-                .value(Field.builder().longValue((long)categoryId).build())
-                .build();
-    }
-
-    private SqlParameter amountParam(double amount) {
-        return SqlParameter.builder()
-                .name("amount")
-                .value(Field.builder().doubleValue(amount).build())
-                .build();
-    }
-
-    private SqlParameter descParam(String description) {
-        return SqlParameter.builder()
-                .name("description")
-                .value(Field.builder().stringValue(description).build())
-                .build();
-    }
-
-    private SqlParameter dateParam(String date) {
-        return SqlParameter.builder()
-                .name("date")
-                .value(Field.builder().stringValue(date).build())
-                .build();
-    }
-
-    private SqlParameter yearParam(int year) {
-        return SqlParameter.builder()
-                .name("year")
-                .value(Field.builder().longValue((long) year).build())
-                .build();
-    }
-
-    private SqlParameter monthParam(int month) {
-        return SqlParameter.builder()
-                .name("month")
-                .value(Field.builder().longValue((long) month).build())
-                .build();
     }
 }

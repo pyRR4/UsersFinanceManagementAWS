@@ -1,0 +1,40 @@
+{
+  "Comment": "State machine to forecast expenses for all users",
+  "StartAt": "GetAllUsers",
+  "States": {
+    "GetAllUsers": {
+      "Type": "Task",
+      "Resource": "${GetAllUsersLambdaArn}",
+      "ResultPath": "$.users",
+      "Next": "ProcessEachUser"
+    },
+    "ProcessEachUser": {
+      "Type": "Map",
+      "ItemsPath": "$.users.Payload",
+      "MaxConcurrency": 5,
+      "Iterator": {
+        "StartAt": "FetchHistory",
+        "States": {
+          "FetchHistory": {
+            "Type": "Task",
+            "Resource": "${FetchUserTransactionsLambdaArn}",
+            "ResultPath": "$.transactions",
+            "Next": "CalculateForecast"
+          },
+          "CalculateForecast": {
+            "Type": "Task",
+            "Resource": "${CalculateForecastLambdaArn}",
+            "ResultPath": "$.forecastResult",
+            "Next": "SaveForecast"
+          },
+          "SaveForecast": {
+            "Type": "Task",
+            "Resource": "${SaveForecastLambdaArn}",
+            "End": true
+          }
+        }
+      },
+      "End": true
+    }
+  }
+}

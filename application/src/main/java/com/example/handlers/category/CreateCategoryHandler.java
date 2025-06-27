@@ -15,7 +15,7 @@ public class CreateCategoryHandler extends AbstractHandler<CategoryService> {
 
     @Override
     protected HandlerResponse handleRequestLogic(APIGatewayProxyRequestEvent request, Context context) {
-        int userId = authService.getUserId(request);
+        int userId = authService.getUserId(request, context);
         CategoryRequest categoryRequest = gson.fromJson(request.getBody(), CategoryRequest.class);
 
         service.create(categoryRequest.getName(), userId);

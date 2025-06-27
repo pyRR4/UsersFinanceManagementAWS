@@ -1,161 +1,153 @@
 package com.example.repository.implementation;
 
-import com.example.config.DatabaseConfig;
 import com.example.model.SavingGoal;
 import com.example.model.request.SavingGoalRequest;
-import com.example.repository.AbstractRdsRepository;
+import com.example.repository.AbstractJdbcRepository;
 import com.example.repository.contract.SavingGoalRepository;
-import software.amazon.awssdk.services.rdsdata.RdsDataClient;
-import software.amazon.awssdk.services.rdsdata.model.ExecuteStatementRequest;
-import software.amazon.awssdk.services.rdsdata.model.ExecuteStatementResponse;
-import software.amazon.awssdk.services.rdsdata.model.Field;
-import software.amazon.awssdk.services.rdsdata.model.SqlParameter;
 
+import javax.sql.DataSource;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-public class SavingGoalRepositoryImpl extends AbstractRdsRepository<SavingGoal> implements SavingGoalRepository {
+public class SavingGoalRepositoryImpl extends AbstractJdbcRepository implements SavingGoalRepository {
 
-    public SavingGoalRepositoryImpl(RdsDataClient rdsDataClient, DatabaseConfig dbConfig) {
-        super(rdsDataClient, dbConfig);
+    public SavingGoalRepositoryImpl(DataSource dataSource) {
+        super(dataSource);
     }
 
     @Override
     public SavingGoal create(SavingGoalRequest request, int userId) {
         String sql = "INSERT INTO saving_goals (title, target_amount, user_id) " +
-                "VALUES (:title, :target_amount, :user_id) " +
+                "VALUES (?, ?, ?) " +
                 "RETURNING id, title, target_amount, current_amount";
 
-        SqlParameter titleParam = titleParam(request.getTitle());
-        SqlParameter targetParam = targetAmountParam(request.getTargetAmount());
-        SqlParameter userParam = userParam(userId);
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
 
-        ExecuteStatementRequest sqlRequest = createExecuteStatementRequest(sql, titleParam, targetParam, userParam);
-        ExecuteStatementResponse response = rdsDataClient.executeStatement(sqlRequest);
+            ps.setString(1, request.getTitle());
+            ps.setDouble(2, request.getTargetAmount());
+            ps.setInt(3, userId);
 
-        return mapResponseToList(response).get(0);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                return mapRowToSavingGoal(rs);
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Error creating saving goal", e);
+        }
+        throw new IllegalStateException("Could not create saving goal and retrieve its data.");
     }
 
     @Override
     public List<SavingGoal> findAllByUserId(int userId) {
-        String sql = "SELECT id, title, target_amount, current_amount FROM saving_goals WHERE user_id = :user_id";
-        SqlParameter userParam = userParam(userId);
+        List<SavingGoal> goals = new ArrayList<>();
+        String sql = "SELECT id, title, target_amount, current_amount FROM saving_goals WHERE user_id = ?";
 
-        ExecuteStatementRequest sqlRequest = createExecuteStatementRequest(sql, userParam);
-        ExecuteStatementResponse response = rdsDataClient.executeStatement(sqlRequest);
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
 
-        return mapResponseToList(response);
+            ps.setInt(1, userId);
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                goals.add(mapRowToSavingGoal(rs));
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Error fetching saving goals for user " + userId, e);
+        }
+        return goals;
     }
 
     @Override
     public Optional<SavingGoal> findByIdAndUserId(int goalId, int userId) {
-        String sql = "SELECT id, title, target_amount, current_amount FROM saving_goals WHERE id = :goal_id AND user_id = :user_id";
-        SqlParameter goalParam = goalParam(goalId);
-        SqlParameter userParam = userParam(userId);
+        String sql = "SELECT id, title, target_amount, current_amount FROM saving_goals WHERE id = ? AND user_id = ?";
 
-        ExecuteStatementRequest sqlRequest = createExecuteStatementRequest(sql, goalParam, userParam);
-        ExecuteStatementResponse response = rdsDataClient.executeStatement(sqlRequest);
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
 
-        return mapResponseToList(response).stream().findFirst();
+            ps.setInt(1, goalId);
+            ps.setInt(2, userId);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                return Optional.of(mapRowToSavingGoal(rs));
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Error fetching saving goal by id", e);
+        }
+        return Optional.empty();
     }
 
     @Override
     public SavingGoal update(int goalId, int userId, SavingGoalRequest request) {
-        String sql = "UPDATE saving_goals SET title = :title, target_amount = :target_amount " +
-                "WHERE id = :goal_id AND user_id = :user_id " +
+        String sql = "UPDATE saving_goals SET title = ?, target_amount = ? " +
+                "WHERE id = ? AND user_id = ? " +
                 "RETURNING id, title, target_amount, current_amount";
 
-        SqlParameter titleParam = titleParam(request.getTitle());
-        SqlParameter targetParam = targetAmountParam(request.getTargetAmount());
-        SqlParameter goalParam = goalParam(goalId);
-        SqlParameter userParam = userParam(userId);
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
 
-        ExecuteStatementRequest sqlRequest = createExecuteStatementRequest(sql, titleParam, targetParam, goalParam, userParam);
-        ExecuteStatementResponse response = rdsDataClient.executeStatement(sqlRequest);
+            ps.setString(1, request.getTitle());
+            ps.setDouble(2, request.getTargetAmount());
+            ps.setInt(3, goalId);
+            ps.setInt(4, userId);
 
-        return mapResponseToList(response).get(0);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                return mapRowToSavingGoal(rs);
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Error updating saving goal", e);
+        }
+        throw new IllegalStateException("Could not update saving goal and retrieve its data.");
     }
 
     @Override
     public void deleteByIdAndUserId(int goalId, int userId) {
-        deleteByIdAndUserId(goalId, userId, null);
-    }
+        String sql = "DELETE FROM saving_goals WHERE id = ? AND user_id = ?";
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
 
-    @Override
-    public void deleteByIdAndUserId(int goalId, int userId, String transactionId) {
-        String sql = "DELETE FROM saving_goals WHERE id = :goal_id AND user_id = :user_id";
-        SqlParameter goalParam = goalParam(goalId);
-        SqlParameter userParam = userParam(userId);
-
-        ExecuteStatementRequest sqlRequest = createExecuteStatementRequest(sql, transactionId, goalParam, userParam);
-        rdsDataClient.executeStatement(sqlRequest);
+            ps.setInt(1, goalId);
+            ps.setInt(2, userId);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException("Error deleting saving goal", e);
+        }
     }
 
     @Override
     public double addFunds(int goalId, int userId, double amountToAdd) {
-        return this.addFunds(goalId, userId, amountToAdd, null);
-    }
-
-    @Override
-    public double addFunds(int goalId, int userId, double amountToAdd, String transactionId) {
-        String sql = "UPDATE saving_goals SET current_amount = current_amount + :amount_to_add " +
-                "WHERE id = :goal_id AND user_id = :user_id " +
+        String sql = "UPDATE saving_goals SET current_amount = current_amount + ? " +
+                "WHERE id = ? AND user_id = ? " +
                 "RETURNING current_amount";
 
-        SqlParameter amountParam = amountToAddParam(amountToAdd);
-        SqlParameter goalParam = goalParam(goalId);
-        SqlParameter userParam = userParam(userId);
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
 
-        ExecuteStatementRequest sqlRequest = createExecuteStatementRequest(sql, transactionId, amountParam, goalParam, userParam);
-        ExecuteStatementResponse response = rdsDataClient.executeStatement(sqlRequest);
+            ps.setDouble(1, amountToAdd);
+            ps.setInt(2, goalId);
+            ps.setInt(3, userId);
 
-        return response.records().get(0).get(0).doubleValue();
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                return rs.getDouble("current_amount");
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Error adding funds to saving goal", e);
+        }
+        throw new IllegalStateException("Could not add funds to saving goal.");
     }
 
-    @Override
-    protected SavingGoal mapToEntity(List<Field> record) {
+    private SavingGoal mapRowToSavingGoal(ResultSet rs) throws SQLException {
         return new SavingGoal(
-                record.get(0).longValue().intValue(), // id
-                record.get(1).stringValue(),          // title
-                record.get(2).doubleValue(),          // target_amount
-                record.get(3).doubleValue()           // current_amount
+                rs.getInt("id"),
+                rs.getString("title"),
+                rs.getDouble("target_amount"),
+                rs.getDouble("current_amount")
         );
     }
-
-    private SqlParameter titleParam(String title) {
-        return SqlParameter.builder()
-                .name("title")
-                .value(Field.builder().stringValue(title).build())
-                .build();
-    }
-
-    private SqlParameter targetAmountParam(double targetAmount) {
-        return SqlParameter.builder()
-                .name("target_amount")
-                .value(Field.builder().doubleValue(targetAmount).build())
-                .build();
-    }
-
-    private SqlParameter userParam(int userId) {
-        return SqlParameter.builder()
-                .name("user_id")
-                .value(Field.builder().longValue((long)userId).build())
-                .build();
-    }
-
-    private SqlParameter goalParam(int goalId) {
-        return SqlParameter.builder()
-                .name("goal_id")
-                .value(Field.builder().longValue((long)goalId).build())
-                .build();
-    }
-
-    private SqlParameter amountToAddParam(double amount) {
-        return SqlParameter.builder()
-                .name("amount_to_add")
-                .value(Field.builder().doubleValue(amount).build())
-                .build();
-    }
-
-
 }

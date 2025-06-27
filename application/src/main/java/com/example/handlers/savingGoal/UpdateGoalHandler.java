@@ -15,7 +15,7 @@ public class UpdateGoalHandler extends AbstractHandler<SavingGoalService> {
 
     @Override
     protected HandlerResponse handleRequestLogic(APIGatewayProxyRequestEvent request, Context context) {
-        int userId = authService.getUserId(request);
+        int userId = authService.getUserId(request, context);
         int goalId = Integer.parseInt(request.getPathParameters().get("id"));
         SavingGoalRequest goalRequest = gson.fromJson(request.getBody(), SavingGoalRequest.class);
 
