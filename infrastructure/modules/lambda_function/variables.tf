@@ -23,13 +23,13 @@ variable "runtime" {
 variable "memory_size" {
   description = "Ilość pamięci RAM dla funkcji w MB."
   type        = number
-  default     = 512
+  default     = 1024
 }
 
 variable "timeout" {
   description = "Maksymalny czas wykonania funkcji w sekundach."
   type        = number
-  default     = 30
+  default     = 60
 }
 
 variable "iam_role_arn" {

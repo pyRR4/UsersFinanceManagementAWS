@@ -21,7 +21,12 @@ resource "aws_cognito_user_pool_client" "this" {
 
   generate_secret = false
 
-  explicit_auth_flows = ["ALLOW_USER_SRP_AUTH", "ALLOW_ADMIN_USER_PASSWORD_AUTH", "ALLOW_REFRESH_TOKEN_AUTH"]
+  explicit_auth_flows = [
+    "ALLOW_USER_SRP_AUTH",
+    "ALLOW_ADMIN_USER_PASSWORD_AUTH",
+    "ALLOW_REFRESH_TOKEN_AUTH",
+    "ALLOW_USER_PASSWORD_AUTH"
+  ]
 
   access_token_validity  = 60    # Ważność Access Tokenu: 60 minut
   id_token_validity      = 60    # Ważność ID Tokenu: 60 minut

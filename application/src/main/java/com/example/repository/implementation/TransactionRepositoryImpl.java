@@ -20,9 +20,17 @@ public class TransactionRepositoryImpl extends AbstractJdbcRepository implements
 
     @Override
     public void save(TransactionRequest transaction, int userId) {
+        try (Connection conn = dataSource.getConnection()) {
+            this.save(transaction, userId, conn);
+        } catch (SQLException e) {
+            throw new RuntimeException("Error getting connection for non-transactional save", e);
+        }
+    }
+
+    @Override
+    public void save(TransactionRequest transaction, int userId, Connection conn) {
         String sql = "INSERT INTO transactions (user_id, amount, date, description, category_id) VALUES (?, ?, ?, ?, ?)";
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setInt(1, userId);
             ps.setDouble(2, transaction.getAmount());
@@ -32,7 +40,7 @@ public class TransactionRepositoryImpl extends AbstractJdbcRepository implements
 
             ps.executeUpdate();
         } catch (SQLException e) {
-            throw new RuntimeException("Error saving transaction", e);
+            throw new RuntimeException("Error saving transaction within a transaction", e);
         }
     }
 

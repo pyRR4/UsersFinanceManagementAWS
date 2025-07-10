@@ -3,6 +3,7 @@ package com.example.repository.contract;
 import com.example.model.SavingGoal;
 import com.example.model.request.SavingGoalRequest;
 
+import java.sql.Connection;
 import java.util.List;
 import java.util.Optional;
 
@@ -13,4 +14,5 @@ public interface SavingGoalRepository {
     SavingGoal update(int goalId, int userId, SavingGoalRequest request);
     void deleteByIdAndUserId(int goalId, int userId);
     double addFunds(int goalId, int userId, double amountToAdd);
+    double addFunds(int goalId, int userId, double amountToAdd, Connection conn);
 }

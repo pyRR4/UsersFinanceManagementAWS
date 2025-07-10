@@ -19,14 +19,9 @@ variable "vpc_id" {
   type        = string
 }
 
-variable "private_subnet_ids" {
+variable "public_subnet_ids" {
   description = "Lista ID prywatnych podsieci dla bazy danych."
   type        = list(string)
-}
-
-variable "allowed_security_group_id" {
-  description = "ID grupy bezpieczenstwa, ktorej zezwolimy na dostep do bazy (np. grupy Lambd)."
-  type        = string
 }
 
 variable "db_instance_class" {

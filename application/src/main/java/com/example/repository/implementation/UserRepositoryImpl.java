@@ -33,6 +33,7 @@ public class UserRepositoryImpl extends AbstractJdbcRepository implements UserRe
                 return Optional.of(mapRowToUser(rs));
             }
         } catch (SQLException e) {
+            e.printStackTrace();
             throw new RuntimeException("Error fetching user by cognito sub", e);
         }
         return Optional.empty();
@@ -58,10 +59,17 @@ public class UserRepositoryImpl extends AbstractJdbcRepository implements UserRe
 
     @Override
     public double updateBalance(int userId, double balanceDelta) {
-        String sql = "UPDATE users SET balance = balance + ? WHERE id = ? RETURNING balance";
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection()) {
+            return updateBalance(userId, balanceDelta, conn);
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
+    @Override
+    public double updateBalance(int userId, double balanceDelta, Connection conn) {
+        String sql = "UPDATE users SET balance = balance + ? WHERE id = ? RETURNING balance";
+        try (PreparedStatement ps = conn.prepareStatement(sql)) { // Używamy przekazanego 'conn'
             ps.setDouble(1, balanceDelta);
             ps.setInt(2, userId);
             ResultSet rs = ps.executeQuery();
@@ -71,7 +79,7 @@ public class UserRepositoryImpl extends AbstractJdbcRepository implements UserRe
         } catch (SQLException e) {
             throw new RuntimeException("Error updating user balance", e);
         }
-        throw new ResourceNotFoundException("User not found with id: " + userId + ", cannot update balance.");
+        throw new ResourceNotFoundException("User not found with id: " + userId);
     }
 
     @Override

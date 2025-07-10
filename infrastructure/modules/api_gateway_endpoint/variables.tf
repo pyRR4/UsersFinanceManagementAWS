@@ -18,6 +18,12 @@ variable "authorizer_id" {
   type        = string
 }
 
+variable "authorization_type" {
+  description = "Typ autoryzacji dla metody (np. 'NONE', 'COGNITO_USER_POOLS')."
+  type        = string
+  default     = "COGNITO_USER_POOLS"
+}
+
 variable "lambda_integrations" {
   description = "Mapa metod HTTP do integracji z funkcjami Lambda. Klucz to metoda (np. 'POST'), wartość to obiekt z ARN i nazwą Lambdy."
   type        = map(object({

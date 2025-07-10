@@ -23,3 +23,8 @@ output "s3_reports_bucket_name" {
   description = "Nazwa bucketu S3, w którym będą przechowywane raporty."
   value       = module.reports_bucket.bucket_name
 }
+
+output "bastion_public_ip" {
+  description = "Publiczny adres IP serwera bastionowego."
+  value       = aws_instance.bastion.public_ip
+}

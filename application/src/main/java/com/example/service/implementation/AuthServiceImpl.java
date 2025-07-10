@@ -2,13 +2,13 @@ package com.example.service.implementation;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
+import com.auth0.jwt.exceptions.JWTVerificationException;
+import com.auth0.jwt.interfaces.DecodedJWT;
 import com.example.repository.contract.UserRepository;
 import com.example.service.contract.AuthService;
 import com.example.model.User;
 import com.google.gson.Gson;
 import lombok.RequiredArgsConstructor;
-
-import java.util.Map;
 
 @RequiredArgsConstructor
 public class AuthServiceImpl implements AuthService {
@@ -17,23 +17,33 @@ public class AuthServiceImpl implements AuthService {
     private final Gson gson;
 
     @Override
-    public int getUserId(APIGatewayProxyRequestEvent request, Context context) {
-        Map<String, Object> authorizer = request.getRequestContext().getAuthorizer();
-        context.getLogger().log("Received authentication request: " + gson.toJson(request));
-        if (authorizer == null || !authorizer.containsKey("claims")) {
-            throw new RuntimeException("Authorization context not found.");
+    public int getUserId(APIGatewayProxyRequestEvent request, Context context) {String authHeader = request.getHeaders().get("Authorization");
+
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            throw new RuntimeException("Missing or invalid Authorization header");
         }
 
-        Map<String, String> claims = (Map<String, String>) authorizer.get("claims");
-        String cognitoSub = claims.get("sub");
-        String email = claims.get("email");
+        String token = authHeader.substring("Bearer ".length());
 
-        if (cognitoSub == null || email == null) {
-            throw new RuntimeException("Cognito 'sub' or 'email' claim not found in token.");
+        try {
+            DecodedJWT jwt = JwtValidator.verifyToken(token);
+
+            String sub = jwt.getClaim("sub").asString();
+            String email = jwt.getClaim("email").asString();
+
+            context.getLogger().log("User sub: " + sub + ", email: " + email);
+
+            return userRepository.findByCognitoSub(sub)
+                    .map(User::getId)
+                    .orElseGet(() -> userRepository.create(sub, email).getId());
+
+        } catch (JWTVerificationException ex) {
+            context.getLogger().log("Invalid token: " + ex.getMessage());
+            throw new RuntimeException("Unauthorized");
+        } catch (Exception ex) {
+            context.getLogger().log("Token verification error: " + ex.getMessage());
+            throw new RuntimeException("Unauthorized");
         }
-
-        return userRepository.findByCognitoSub(cognitoSub)
-                .map(User::getId)
-                .orElseGet(() -> userRepository.create(cognitoSub, email).getId());
     }
+
 }
