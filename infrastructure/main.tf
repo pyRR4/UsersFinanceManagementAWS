@@ -6,6 +6,22 @@ module "user_pool" {
   tags            = var.tags
 }
 
+resource "aws_cognito_user" "test_user" {
+  user_pool_id = module.user_pool.pool_id
+
+  username = "igopood33@gmail.com"
+  password = "th3Ziemni@czek"
+
+  attributes = {
+    email          = "igopood33@gmail.com"
+    email_verified = true
+  }
+  message_action = "SUPPRESS"
+  lifecycle {
+    ignore_changes = [password]
+  }
+}
+
 module "report_notifications_topic" {
   source     = "./modules/sns_topic"
   topic_name = "${var.project_name}-${var.environment}-report-notifications"
@@ -69,7 +85,7 @@ module "database" {
 module "db_password_secret" {
   source = "./modules/secrets_manager"
 
-  secret_name  = "${var.project_name}/${var.environment}/db-password-v1"
+  secret_name  = "${var.project_name}/${var.environment}/db-password-v2"
   secret_value = var.db_password
   tags         = var.tags
 }

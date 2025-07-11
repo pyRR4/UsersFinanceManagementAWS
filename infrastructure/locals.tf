@@ -2,10 +2,12 @@ locals {
   common_environment_variables = {
     DB_CLUSTER_ARN = module.database.db_instance_arn
     DB_SECRET_ARN = module.db_password_secret.secret_arn
-    DB_HOST       = module.database.db_instance_endpoint # lub module.database_proxy.proxy_endpoint
+    DB_HOST       = module.database.db_instance_endpoint
     DB_PORT       = module.database.db_connection_data.port
     DB_NAME       = var.db_name
     DB_USERNAME   = var.db_username
+    COGNITO_REGION = var.aws_region
+    COGNITO_USERPOOL_ID = module.user_pool.pool_id
   }
 
   lambda_definitions = {

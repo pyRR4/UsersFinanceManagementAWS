@@ -17,16 +17,15 @@ resource "aws_cognito_user_pool" "this" {
 
 resource "aws_cognito_user_pool_client" "this" {
   name         = var.app_client_name
-  user_pool_id = aws_cognito_user_pool.this.id
 
   generate_secret = false
 
   explicit_auth_flows = [
-    "ALLOW_USER_SRP_AUTH",
-    "ALLOW_ADMIN_USER_PASSWORD_AUTH",
-    "ALLOW_REFRESH_TOKEN_AUTH",
-    "ALLOW_USER_PASSWORD_AUTH"
+    "ADMIN_NO_SRP_AUTH",
+    "USER_PASSWORD_AUTH"
   ]
+  supported_identity_providers = ["COGNITO"]
+  user_pool_id = aws_cognito_user_pool.this.id
 
   access_token_validity  = 60    # Ważność Access Tokenu: 60 minut
   id_token_validity      = 60    # Ważność ID Tokenu: 60 minut

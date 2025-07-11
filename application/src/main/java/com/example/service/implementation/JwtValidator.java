@@ -15,19 +15,27 @@ import java.util.concurrent.TimeUnit;
 
 public class JwtValidator {
 
-    private static final String REGION = "us-east-1";
-    private static final String USERPOOL_ID = "us-east-1_HahahEUES";
-    private static final String ISSUER = "https://cognito-idp." + REGION + ".amazonaws.com/" + USERPOOL_ID;
+    private static final String REGION;
+    private static final String USERPOOL_ID;
+    private static final String ISSUER;
 
     private static final JwkProvider jwkProvider;
 
     static {
+        REGION = System.getenv("COGNITO_REGION");
+        USERPOOL_ID = System.getenv("COGNITO_USERPOOL_ID");
+
+        if (REGION == null || USERPOOL_ID == null || REGION.isEmpty() || USERPOOL_ID.isEmpty()) {
+            throw new IllegalStateException("Missing required environment variables: COGNITO_REGION and COGNITO_USERPOOL_ID");
+        }
+        ISSUER = "https://cognito-idp." + REGION + ".amazonaws.com/" + USERPOOL_ID;
+
         try {
             jwkProvider = new JwkProviderBuilder(new URL(ISSUER + "/.well-known/jwks.json"))
                     .cached(10, 24, TimeUnit.HOURS)
                     .build();
         } catch (MalformedURLException e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException("Failed to build JwkProvider due to a malformed URL", e);
         }
     }
 
