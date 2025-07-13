@@ -9,8 +9,8 @@ module "user_pool" {
 resource "aws_cognito_user" "test_user" {
   user_pool_id = module.user_pool.pool_id
 
-  username = "igopood33@gmail.com"
-  password = "th3Ziemni@czek"
+  username = var.test_user_email
+  password = var.test_user_password
 
   attributes = {
     email          = "igopood33@gmail.com"
