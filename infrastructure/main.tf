@@ -85,7 +85,7 @@ module "database" {
 module "db_password_secret" {
   source = "./modules/secrets_manager"
 
-  secret_name  = "${var.project_name}/${var.environment}/db-password-v2"
+  secret_name  = "${var.project_name}/${var.environment}/db-password-v3"
   secret_value = var.db_password
   tags         = var.tags
 }

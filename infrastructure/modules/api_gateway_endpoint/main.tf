@@ -12,6 +12,8 @@ resource "aws_api_gateway_method" "lambda_methods" {
   http_method   = each.key
   authorization = var.authorization_type
   authorizer_id = var.authorizer_id
+
+  api_key_required = false
 }
 
 resource "aws_api_gateway_integration" "lambda_integrations" {
