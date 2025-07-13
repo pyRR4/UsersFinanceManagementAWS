@@ -30,7 +30,7 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     public void update(int categoryId, String name, int userId) {
-        categoryRepository.findByNameAndUserId(name, userId)
+        categoryRepository.findByIdAndUserId(categoryId, userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Category with id: " + categoryId
                         + " not found for user with id: " + userId));
 
