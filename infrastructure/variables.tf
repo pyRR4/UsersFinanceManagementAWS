@@ -34,6 +34,17 @@ variable "db_password" {
   sensitive   = true
 }
 
+variable "test_user_password" {
+  description = "Hasło dla testowego użytkownika aplikacji. Powinno być podane w pliku .tfvars."
+  type        = string
+  sensitive   = true
+}
+
+variable "test_user_email" {
+  description = "Email dla testowego użytkownika aplikacji. Powinno być podane w pliku .tfvars."
+  type        = string
+}
+
 variable "app_jar_path" {
   description = "Względna ścieżka do pliku JAR z aplikacją Javy."
   type        = string
