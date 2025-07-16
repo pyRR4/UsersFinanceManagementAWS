@@ -89,9 +89,10 @@ public class DependencyFactory {
      * Rejestruje wszystkie implementacje repozytoriów.
      */
     private void registerRepositories() {
+        CategoryRepository categoryRepository = new CategoryRepositoryImpl(getService(DataSource.class));
         register(UserRepository.class, new UserRepositoryImpl(getService(DataSource.class)));
-        register(TransactionRepository.class, new TransactionRepositoryImpl(getService(DataSource.class)));
-        register(CategoryRepository.class, new CategoryRepositoryImpl(getService(DataSource.class)));
+        register(TransactionRepository.class, new TransactionRepositoryImpl(getService(DataSource.class), categoryRepository));
+        register(CategoryRepository.class, categoryRepository);
         register(SavingGoalRepository.class, new SavingGoalRepositoryImpl(getService(DataSource.class)));
         register(ForecastRepository.class, new ForecastRepositoryImpl(getService(DataSource.class)));
     }
