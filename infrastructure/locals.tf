@@ -22,11 +22,11 @@ locals {
     "update-category" = { handler = "com.example.handlers.category.UpdateCategoryHandler::handleRequest", needs_vpc = true }
     "delete-category" = { handler = "com.example.handlers.category.DeleteCategoryHandler::handleRequest", needs_vpc = true }
 
-    "create-saving-goal"  = { handler = "com.example.handlers.savingGoal.CreateSavingGoalHandler::handleRequest", needs_vpc = true }
-    "get-saving-goals"    = { handler = "com.example.handlers.savingGoal.GetSavingGoalsHandler::handleRequest", needs_vpc = true }
-    "update-saving-goal"  = { handler = "com.example.handlers.savingGoal.UpdateSavingGoalHandler::handleRequest", needs_vpc = true }
-    "delete-saving-goal"  = { handler = "com.example.handlers.savingGoal.DeleteSavingGoalHandler::handleRequest", needs_vpc = true }
-    "add-funds-to-goal"   = { handler = "com.example.handlers.savingGoal.AddFundsToGoalHandler::handleRequest", needs_vpc = true }
+    "create-saving-goal"  = { handler = "com.example.handlers.savingGoal.CreateGoalHandler::handleRequest", needs_vpc = true }
+    "get-saving-goals"    = { handler = "com.example.handlers.savingGoal.GetGoalsHandler::handleRequest", needs_vpc = true }
+    "update-saving-goal"  = { handler = "com.example.handlers.savingGoal.UpdateGoalHandler::handleRequest", needs_vpc = true }
+    "delete-saving-goal"  = { handler = "com.example.handlers.savingGoal.DeleteGoalHandler::handleRequest", needs_vpc = true }
+    "add-funds-to-goal"   = { handler = "com.example.handlers.savingGoal.AddFundsHandler::handleRequest", needs_vpc = true }
 
     "start-report-generation" = {
       handler   = "com.example.handlers.raport.StartReportGenerationHandler::handleRequest",
