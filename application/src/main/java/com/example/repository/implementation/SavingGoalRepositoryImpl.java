@@ -121,12 +121,20 @@ public class SavingGoalRepositoryImpl extends AbstractJdbcRepository implements 
 
     @Override
     public double addFunds(int goalId, int userId, double amountToAdd) {
+        try (Connection conn = dataSource.getConnection()) {
+            return this.addFunds(goalId, userId, amountToAdd, conn);
+        } catch (SQLException e) {
+            throw new RuntimeException("Error getting connection for non-transactional addFunds", e);
+        }
+    }
+
+    @Override
+    public double addFunds(int goalId, int userId, double amountToAdd, Connection conn) {
         String sql = "UPDATE saving_goals SET current_amount = current_amount + ? " +
                 "WHERE id = ? AND user_id = ? " +
                 "RETURNING current_amount";
 
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setDouble(1, amountToAdd);
             ps.setInt(2, goalId);
@@ -137,7 +145,7 @@ public class SavingGoalRepositoryImpl extends AbstractJdbcRepository implements 
                 return rs.getDouble("current_amount");
             }
         } catch (SQLException e) {
-            throw new RuntimeException("Error adding funds to saving goal", e);
+            throw new RuntimeException("Error adding funds to saving goal within a transaction", e);
         }
         throw new IllegalStateException("Could not add funds to saving goal.");
     }

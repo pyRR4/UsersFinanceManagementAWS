@@ -9,3 +9,7 @@ output "function_arn" {
 output "invoke_arn" {
   value = aws_lambda_function.this.invoke_arn
 }
+
+output "tags" {
+  value       = aws_lambda_function.this.tags
+}

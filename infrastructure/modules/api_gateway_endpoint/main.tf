@@ -1,19 +1,19 @@
-# 1. Tworzymy zasób (ścieżkę) na podstawie przekazanych parametrów
 resource "aws_api_gateway_resource" "this" {
   rest_api_id = var.rest_api_id
   parent_id   = var.parent_id
   path_part   = var.path_part
 }
 
-# 2. Dynamicznie tworzymy metody, integracje i uprawnienia dla każdej pozycji w mapie 'lambda_integrations'
 resource "aws_api_gateway_method" "lambda_methods" {
   for_each = var.lambda_integrations
 
   rest_api_id   = var.rest_api_id
   resource_id   = aws_api_gateway_resource.this.id
-  http_method   = each.key # np. "POST", "GET"
-  authorization = "COGNITO_USER_POOLS"
+  http_method   = each.key
+  authorization = var.authorization_type
   authorizer_id = var.authorizer_id
+
+  api_key_required = false
 }
 
 resource "aws_api_gateway_integration" "lambda_integrations" {
@@ -37,7 +37,6 @@ resource "aws_lambda_permission" "allow_api_gateway" {
   source_arn = "${var.rest_api_execution_arn}/*/${aws_api_gateway_method.lambda_methods[each.key].http_method}${aws_api_gateway_resource.this.path}"
 }
 
-# 3. Automatyczna obsługa CORS (Metoda OPTIONS)
 resource "aws_api_gateway_method" "options_method" {
   rest_api_id   = var.rest_api_id
   resource_id   = aws_api_gateway_resource.this.id

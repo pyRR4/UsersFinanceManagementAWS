@@ -14,9 +14,10 @@ import com.example.service.implementation.*;
 import com.example.service.implementation.report.ReportDistributionServiceImpl;
 import com.example.service.implementation.report.ReportingJobServiceImpl;
 import com.example.service.implementation.report.TextReportFormattingService;
-import com.zaxxer.hikari.HikariConfig;
-import com.zaxxer.hikari.HikariDataSource;
 import lombok.Getter;
+import org.postgresql.ds.PGSimpleDataSource;
+import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
+import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.rdsdata.RdsDataClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.sns.SnsClient;
@@ -49,19 +50,16 @@ public class DependencyFactory {
      * Rejestruje podstawowe, współdzielone komponenty i klientów AWS.
      */
     private void registerCoreComponents() {
+        System.out.println("TWORZENIE DB CONFIG");
         DatabaseConfig dbConfig = new DatabaseConfig();
         register(DatabaseConfig.class, dbConfig);
 
-        String secretJson = new SecretManagerServiceImpl().getSecret(dbConfig.getDbSecretArn());
-        DatabaseCredentials credentials = new Gson().fromJson(secretJson, DatabaseCredentials.class);
+        System.out.println("KONIEC DB CONFIG");
 
-        HikariConfig hikariConfig = new HikariConfig();
-        hikariConfig.setJdbcUrl(String.format("jdbc:postgresql://%s:%d/%s", credentials.getHost(), credentials.getPort(), credentials.getDbname()));
-        hikariConfig.setUsername(credentials.getUsername());
-        hikariConfig.setPassword(credentials.getPassword());
-        hikariConfig.setMaximumPoolSize(5);
+        SecretsManagerService secretsManagerService = new SecretsManagerServiceImpl();
+        register(SecretsManagerService.class, secretsManagerService);
 
-        DataSource dataSource = new HikariDataSource(hikariConfig);
+        DataSource dataSource = createDataSource(dbConfig, getService(SecretsManagerService.class));
         register(DataSource.class, dataSource);
 
         register(RdsDataClient.class, RdsDataClient.builder().build());
@@ -71,13 +69,30 @@ public class DependencyFactory {
         register(Gson.class, new Gson());
     }
 
+    private DataSource createDataSource(DatabaseConfig dbConfig, SecretsManagerService parameterStore) {
+        String password = parameterStore.getParameter(dbConfig.getDbPasswordSecretArn());
+
+        PGSimpleDataSource dataSource = new PGSimpleDataSource();
+        dataSource.setServerNames(new String[]{"finance-app-dev-db.c45i8cmo45mr.us-east-1.rds.amazonaws.com"});
+        dataSource.setPortNumbers(new int[]{5432});
+        dataSource.setDatabaseName("aplikacja_finansowa");
+        dataSource.setUser("postgres");
+        dataSource.setPassword("P4ssw0rd");
+
+        dataSource.setSsl(true);
+        dataSource.setSslmode("require");
+
+        return dataSource;
+    }
+
     /**
      * Rejestruje wszystkie implementacje repozytoriów.
      */
     private void registerRepositories() {
+        CategoryRepository categoryRepository = new CategoryRepositoryImpl(getService(DataSource.class));
         register(UserRepository.class, new UserRepositoryImpl(getService(DataSource.class)));
-        register(TransactionRepository.class, new TransactionRepositoryImpl(getService(DataSource.class)));
-        register(CategoryRepository.class, new CategoryRepositoryImpl(getService(DataSource.class)));
+        register(TransactionRepository.class, new TransactionRepositoryImpl(getService(DataSource.class), categoryRepository));
+        register(CategoryRepository.class, categoryRepository);
         register(SavingGoalRepository.class, new SavingGoalRepositoryImpl(getService(DataSource.class)));
         register(ForecastRepository.class, new ForecastRepositoryImpl(getService(DataSource.class)));
     }
@@ -90,7 +105,7 @@ public class DependencyFactory {
         register(UserService.class, new UserServiceImpl(getService(UserRepository.class)));
         register(TransactionService.class, new TransactionServiceImpl(getService(TransactionRepository.class)));
         register(CategoryService.class, new CategoryServiceImpl(getService(CategoryRepository.class)));
-        register(TransactionManager.class, new RdsTransactionManager(getService(RdsDataClient.class), getService(DatabaseConfig.class)));
+        register(TransactionManager.class, new JdbcTransactionManager(getService(DataSource.class)));
 
         register(SavingGoalService.class, new SavingGoalServiceImpl(
                 getService(SavingGoalRepository.class),

@@ -4,6 +4,7 @@ import com.example.exception.InsufficientFundsException;
 import com.example.exception.ResourceNotFoundException;
 import com.example.model.SavingGoal;
 import com.example.model.request.SavingGoalRequest;
+import com.example.model.request.TransactionRequest;
 import com.example.repository.contract.SavingGoalRepository;
 import com.example.service.contract.TransactionManager;
 import com.example.repository.contract.TransactionRepository;
@@ -11,6 +12,7 @@ import com.example.repository.contract.UserRepository;
 import com.example.service.contract.SavingGoalService;
 import lombok.RequiredArgsConstructor;
 
+import java.time.OffsetDateTime;
 import java.util.List;
 
 @RequiredArgsConstructor
@@ -67,9 +69,9 @@ public class SavingGoalServiceImpl implements SavingGoalService {
             throw new InsufficientFundsException("Insufficient funds. Current balance: " + currentBalance);
         }
 
-        transactionManager.execute(transactionId -> {
-            userRepository.updateBalance(userId, -amountToAdd);
-            savingGoalRepository.addFunds(goalId, userId, amountToAdd);
+        transactionManager.execute(connection -> {
+            userRepository.updateBalance(userId, -amountToAdd, connection);
+            savingGoalRepository.addFunds(goalId, userId, amountToAdd, connection);
         });
     }
 }

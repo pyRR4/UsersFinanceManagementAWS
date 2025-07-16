@@ -1,27 +1,30 @@
 package com.example.config;
 
 import lombok.Getter;
-
 import java.util.Objects;
 import java.util.stream.Stream;
 
 @Getter
 public class DatabaseConfig {
 
-    private final String dbClusterArn;
-    private final String dbSecretArn;
+    private final String dbHost;
+    private final int dbPort;
     private final String dbName;
+    private final String dbUsername;
+    private final String dbPasswordSecretArn;
 
     public DatabaseConfig() {
-        this.dbClusterArn = System.getenv("DB_CLUSTER_ARN");
-        this.dbSecretArn = System.getenv("DB_SECRET_ARN");
+        this.dbHost = System.getenv("DB_HOST");
+        this.dbPort = Integer.parseInt(System.getenv("DB_PORT"));
         this.dbName = System.getenv("DB_NAME");
+        this.dbUsername = System.getenv("DB_USERNAME");
+        this.dbPasswordSecretArn = System.getenv("DB_SECRET_ARN");
 
         validateConfig();
     }
 
-    public void validateConfig() {
-        if (Stream.of(dbClusterArn, dbSecretArn, dbName).anyMatch(Objects::isNull)) {
+    private void validateConfig() {
+        if (Stream.of(dbHost, dbName, dbUsername, dbPasswordSecretArn).anyMatch(Objects::isNull)) {
             throw new IllegalStateException("One or more database configuration environment variables are not set!");
         }
     }

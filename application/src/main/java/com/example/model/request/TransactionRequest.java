@@ -7,7 +7,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class TransactionRequest {
     private double amount;
-    private int categoryId;
+    private String categoryName;
     private String description;
-    private String date;
+    private String date;            //DATA W PEŁNYM FORMACIE ISO 8601
 }

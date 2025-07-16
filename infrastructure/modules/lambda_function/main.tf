@@ -11,7 +11,6 @@ resource "aws_lambda_function" "this" {
   filename         = var.jar_path
   source_code_hash = filebase64sha256(var.jar_path)
 
-  # Dynamiczny blok - zostanie dodany tylko, jeśli var.vpc_config nie jest nullem
   dynamic "vpc_config" {
     for_each = var.vpc_config != null ? [var.vpc_config] : []
     content {

@@ -1,8 +1,11 @@
 package com.example.repository.implementation;
 
+import com.example.exception.ResourceNotFoundException;
+import com.example.factory.DependencyFactory;
 import com.example.model.Transaction;
 import com.example.model.request.TransactionRequest;
 import com.example.repository.AbstractJdbcRepository;
+import com.example.repository.contract.CategoryRepository;
 import com.example.repository.contract.TransactionRepository;
 
 import javax.sql.DataSource;
@@ -14,25 +17,40 @@ import java.util.Optional;
 
 public class TransactionRepositoryImpl extends AbstractJdbcRepository implements TransactionRepository {
 
-    public TransactionRepositoryImpl(DataSource dataSource) {
+    private final CategoryRepository categoryRepository;
+
+    public TransactionRepositoryImpl(DataSource dataSource, CategoryRepository categoryRepository) {
         super(dataSource);
+        this.categoryRepository = categoryRepository;
     }
 
     @Override
     public void save(TransactionRequest transaction, int userId) {
+        try (Connection conn = dataSource.getConnection()) {
+            this.save(transaction, userId, conn);
+        } catch (SQLException e) {
+            throw new RuntimeException("Error getting connection for non-transactional save", e);
+        }
+    }
+
+    @Override
+    public void save(TransactionRequest transaction, int userId, Connection conn) {
         String sql = "INSERT INTO transactions (user_id, amount, date, description, category_id) VALUES (?, ?, ?, ?, ?)";
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            int categoryId = categoryRepository.findByNameAndUserId(transaction.getCategoryName(), userId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Category with name: " + transaction.getCategoryName()
+                            + " not found for user with id: " + userId)).getId();
 
             ps.setInt(1, userId);
             ps.setDouble(2, transaction.getAmount());
             ps.setObject(3, OffsetDateTime.parse(transaction.getDate()));
             ps.setString(4, transaction.getDescription());
-            ps.setInt(5, transaction.getCategoryId());
+            ps.setInt(5, categoryId);
 
             ps.executeUpdate();
         } catch (SQLException e) {
-            throw new RuntimeException("Error saving transaction", e);
+            throw new RuntimeException("Error saving transaction within a transaction", e);
         }
     }
 
@@ -82,8 +100,12 @@ public class TransactionRepositoryImpl extends AbstractJdbcRepository implements
         try (Connection conn = dataSource.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
+            int categoryId = categoryRepository.findByNameAndUserId(details.getCategoryName(), userId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Category with name: " + details.getCategoryName()
+                            + " not found for user with id: " + userId)).getId();
+
             ps.setDouble(1, details.getAmount());
-            ps.setInt(2, details.getCategoryId());
+            ps.setInt(2, categoryId);
             ps.setString(3, details.getDescription());
             ps.setObject(4, OffsetDateTime.parse(details.getDate()));
             ps.setInt(5, transactionId);

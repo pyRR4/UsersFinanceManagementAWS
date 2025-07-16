@@ -4,10 +4,10 @@ resource "aws_security_group" "this" {
   vpc_id      = var.vpc_id
 
   ingress {
-    protocol        = "tcp"
-    from_port       = 5432
-    to_port         = 5432
-    security_groups = [var.allowed_security_group_id]
+    from_port   = 5432
+    to_port     = 5432
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
   egress {
@@ -22,7 +22,7 @@ resource "aws_security_group" "this" {
 
 resource "aws_db_subnet_group" "this" {
   name       = "${var.project_name}-${var.environment}-db-subnet-group"
-  subnet_ids = var.private_subnet_ids
+  subnet_ids = var.public_subnet_ids
 
   tags = var.tags
 }

@@ -3,6 +3,7 @@ package com.example.repository.implementation;
 import com.example.model.Category;
 import com.example.repository.AbstractJdbcRepository;
 import com.example.repository.contract.CategoryRepository;
+import lombok.extern.slf4j.Slf4j;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -13,6 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+@Slf4j
 public class CategoryRepositoryImpl extends AbstractJdbcRepository implements CategoryRepository {
 
     public CategoryRepositoryImpl(DataSource dataSource) {
@@ -67,7 +69,7 @@ public class CategoryRepositoryImpl extends AbstractJdbcRepository implements Ca
             ps.setInt(3, userId);
             ps.executeUpdate();
         } catch (SQLException e) {
-            throw new RuntimeException("Error updating category", e);
+            throw new RuntimeException("Error updating category" + e.getMessage(), e);
         }
     }
 
