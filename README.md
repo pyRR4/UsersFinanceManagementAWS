@@ -9,10 +9,8 @@ Aplikacja pozwala użytkownikom na śledzenie swoich transakcji, zarządzanie ka
 ### Aktualny Stan Projektu (Ważne)
 > ❗ **Uwaga:** Ten projekt jest wciąż w fazie rozwoju. Poniższe funkcjonalności są zaimplementowane i wdrożone, ale mogą wymagać dalszych testów lub poprawek.
 > * ✅ **Uwierzytelnianie użytkowników** przez Amazon Cognito.
-> * ✅ **Pełne operacje CRUD** (Create, Read, Update, Delete) dla transakcji, kategorii i celów oszczędnościowych.
-> * ✅ **Asynchroniczna infrastruktura** do generowania raportów (EventBridge -> SQS -> Lambda -> S3 -> SNS).
-> * ✅ **Infrastruktura pod prognozowanie wydatków** (Step Functions).
-> * ❌ **Logika biznesowa** dla raportowania i prognozowania w kodzie Javy jest nadal w fazie implementacji.
+> * ✅ **Pełne operacje CRUD oraz działanie API** (Create, Read, Update, Delete) dla transakcji, kategorii i celów oszczędnościowych.
+> * ❌ **Automatyczne generowanie raportów, prognozowanie wydatków, powiadomienia** jedynie vibe-coded, jeszcze nieprzetestowane.
 
 ---
 
@@ -27,7 +25,7 @@ System został zaprojektowany w oparciu o architekturę sterowaną zdarzeniami i
 * **Uwierzytelnianie:** **Amazon Cognito User Pools** zarządza rejestracją, logowaniem i autoryzacją użytkowników za pomocą tokenów JWT.
 * **Procesy Asynchroniczne:**
     * **EventBridge Scheduler** cyklicznie uruchamia zadania w tle.
-    * **Amazon SQS** służy jako niezawodna kolejka zadań.
+    * **Amazon SQS** służy jako kolejka zadań.
     * **Amazon SNS** wysyła powiadomienia do użytkowników.
     * **AWS Step Functions** orkiestruje wieloetapowe procesy (np. prognozowanie).
 * **Sekrety:** Dane dostępowe do bazy są bezpiecznie przechowywane w **AWS Secrets Manager**.
@@ -40,7 +38,7 @@ System został zaprojektowany w oparciu o architekturę sterowaną zdarzeniami i
 * **Backend:** Java 17, Maven
 * **Infrastruktura jako Kod:** Terraform
 * **Baza Danych:** PostgreSQL
-* **Główne Usługi AWS:** Lambda, API Gateway, RDS, Cognito, S3, SQS, SNS, Step Functions, EventBridge, IAM.
+* **Główne Usługi AWS:** Lambda, API Gateway, RDS, Cognito, S3, SQS, SNS, Step Functions, EventBridge, IAM, CloudFront, CloudWatch, Secrets Manager.
 
 ---
 
@@ -72,11 +70,8 @@ Poniższe kroki pozwolą na wdrożenie całej infrastruktury na nowym koncie AWS
 
 3.  **Skonfiguruj Zmienne Terraforma:**
     * Przejdź do folderu z kodem infrastruktury: `cd infrastructure`.
-    * Stwórz plik `terraform.tfvars` z kopii pliku `terraform.tfvars.example` (jeśli istnieje) lub od zera.
-    * W pliku `terraform.tfvars` umieść swoje hasło do bazy danych:
-        ```hcl
-        db_password = "TwojeSuperSilneHaslo123!"
-        ```
+    * Stwórz plik `terraform.tfvars` z kopii pliku `terraform.tfvars.example` lub od zera.
+    * W pliku `terraform.tfvars` umieść wymagane z pliku `terraform.tfvars.example` dane.
     * **Ważne:** Dodaj `terraform.tfvars` do pliku `.gitignore`, aby nie wysłać go do repozytorium!
 
 4.  **Wdróż Infrastrukturę:**
@@ -95,12 +90,7 @@ Poniższe kroki pozwolą na wdrożenie całej infrastruktury na nowym koncie AWS
     * Zatwierdź, wpisując `yes`. Proces może potrwać 10-15 minut, zwłaszcza przy pierwszym tworzeniu bazy danych.
 
 5.  **Konfiguracja po Wdrożeniu (Jednorazowa):**
-    * **Stwórz Schemę Bazy Danych:** Połącz się z nowo utworzoną bazą danych RDS (używając metody z **Bastion Host** i klienta SQL jak DBeaver/pgAdmin) i wykonaj skrypt `schema.sql`, aby stworzyć wszystkie potrzebne tabele.
-    * **Stwórz Użytkownika Testowego:** W konsoli AWS, w usłudze Cognito, znajdź swoją pulę użytkowników i stwórz ręcznie pierwszego użytkownika, aby móc się zalogować i zdobyć token do testów.
+    * **Stwórz Schemę Bazy Danych:** Połącz się z nowo utworzoną bazą danych RDS (używając metody z **Bastion Host** i klienta SQL jak DBeaver/pgAdmin) i wykonaj skrypt `schema.sql`, aby stworzyć wszystkie potrzebne tabele (chwilowo brak automigracji).
 
 ### Testowanie API
-Po wdrożeniu, `terraform output` wyświetli adres URL Twojego API. Testowanie zabezpieczonych endpointów wymaga tokenu JWT. Najprostszym sposobem na jego zdobycie jest użycie **Hostowanej Strony UI Cognito**:
-1.  Skonfiguruj klienta aplikacji i domenę w Cognito (zgodnie z naszymi poprzednimi instrukcjami).
-2.  Zbuduj link logowania, otwórz go w przeglądarce i zarejestruj/zaloguj się jako użytkownik.
-3.  Skopiuj `id_token` z paska adresu przeglądarki.
-4.  Użyj tego tokenu w narzędziu takim jak Postman lub `curl` w nagłówku `Authorization: Bearer [TOKEN]`, aby testować swoje endpointy.
+Po wdrożeniu, `terraform output` wyświetli adres URL Twojego API oraz konieczne dane. Testowanie zabezpieczonych endpointów wymaga tokenu JWT.
