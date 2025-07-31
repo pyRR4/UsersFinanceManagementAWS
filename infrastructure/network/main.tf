@@ -1,5 +1,5 @@
 module "vpc" {
-  source       = "vpc"
+  source       = "./vpc"
   project_name = var.project_name
   aws_region   = var.aws_region
   tags         = var.tags

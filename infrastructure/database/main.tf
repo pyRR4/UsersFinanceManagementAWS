@@ -1,5 +1,5 @@
 module "database" {
-  source = "rds_postgres"
+  source = "./rds_postgres"
 
   project_name            = var.project_name
   environment             = var.environment
@@ -12,7 +12,7 @@ module "database" {
 }
 
 module "db_password_secret" {
-  source = "secrets_manager"
+  source = "./secrets_manager"
 
   secret_name  = "${var.project_name}/${var.environment}/db-password-v6"
   secret_value = var.db_password

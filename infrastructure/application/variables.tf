@@ -16,7 +16,15 @@ variable "environment" {
   default     = "dev"
 }
 
-variable "lambda_subnet_ids" {
+variable "vpc_id" {
+  type = string
+}
+
+variable "public_subnet_ids" {
+  type = list(string)
+}
+
+variable "private_subnet_ids" {
   type = list(string)
 }
 
@@ -28,7 +36,6 @@ variable "db_password_secret_arn" {
   type = string
 }
 
-
 variable "db_name" {
   description = "Nazwa głównej bazy danych do utworzenia wewnątrz instancji RDS."
   type        = string
@@ -39,6 +46,22 @@ variable "db_username" {
   description = "Nazwa głównego użytkownika bazy danych."
   type        = string
   default     = "postgres"
+}
+
+variable "db_port" {
+  type = string
+}
+
+variable "db_host" {
+  type = string
+}
+
+variable "db_cluster_arn" {
+  type = string
+}
+
+variable "db_secret_arn" {
+  type = string
 }
 
 variable "db_password" {

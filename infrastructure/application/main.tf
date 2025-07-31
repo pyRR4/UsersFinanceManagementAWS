@@ -53,7 +53,7 @@ module "lambdas" {
 
   app_lambda_role_arn             = module.app_lambda_role.role_arn
 
-  vpc_private_subnet_ids          = var.lambda_subnet_ids
+  vpc_private_subnet_ids          = var.private_subnet_ids
   lambda_security_group_id        = var.lambda_sg_id
 
   report_jobs_queue_url           = module.messaging.sqs_queue_url
@@ -128,7 +128,7 @@ module "bastion" {
   project_name      = var.project_name
   environment       = var.environment
   tags              = var.tags
-  vpc_id            = module.vpc.vpc_id
-  public_subnet_id  = module.vpc.public_subnet_ids[0]
+  vpc_id            = var.vpc_id
+  public_subnet_id  = var.public_subnet_ids[0]
   key_name          = var.bastion_key_name
 }
